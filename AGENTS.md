@@ -62,6 +62,78 @@ src/
 - 上传视频 + 输入文案 → 生成配音视频
 - 使用 `TTSClient` 生成配音
 
+## 用户系统
+
+### 5. 登录注册 (/auth)
+- 邮箱 + 密码登录/注册
+- 登录后跳转到首页
+- 使用 bcryptjs 加密密码
+
+### 6. 个人中心 (/profile)
+- 查看和修改用户信息
+- 积分余额展示
+- 卡密激活功能
+- 积分交易记录查询
+- 退出登录
+
+### 7. 需求投稿箱 (/submissions)
+- 提交新功能建议、功能优化、问题反馈
+- 支持选择优先级
+- 查看我的投稿记录
+- 状态追踪（待处理、审核中、已采纳、已实现、已拒绝）
+
+## 数据库表结构
+
+### users 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| email | text | 邮箱（唯一） |
+| nickname | text | 昵称 |
+| password_hash | text | 密码哈希 |
+| credits | integer | 积分余额 |
+| is_active | boolean | 账号状态 |
+| created_at | timestamp | 创建时间 |
+| last_login_at | timestamp | 最后登录时间 |
+
+### activation_codes 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| code | text | 卡密（唯一） |
+| code_type | text | 类型（积分/月卡/季卡/年卡） |
+| credits | integer | 积分数量 |
+| is_used | boolean | 是否已使用 |
+| used_by | uuid | 使用者用户ID |
+| used_at | timestamp | 使用时间 |
+| expires_at | timestamp | 过期时间 |
+
+### credit_transactions 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| user_id | uuid | 用户ID |
+| type | text | 交易类型（recharge/consume/refund/activation） |
+| amount | integer | 变动数量 |
+| balance_before | integer | 变动前余额 |
+| balance_after | integer | 变动后余额 |
+| source | text | 来源 |
+| description | text | 描述 |
+| created_at | timestamp | 创建时间 |
+
+### submissions 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| user_id | uuid | 投稿用户 |
+| title | text | 标题 |
+| description | text | 详细描述 |
+| category | text | 类型（feature/improvement/bug/other） |
+| priority | text | 优先级（low/normal/high/urgent） |
+| status | text | 状态（pending/reviewing/accepted/implemented/rejected） |
+| created_at | timestamp | 创建时间 |
+| updated_at | timestamp | 更新时间 |
+
 ## 开发命令
 
 ```bash

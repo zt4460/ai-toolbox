@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useAuth } from './providers';
 import { 
   ImageIcon, 
   VideoIcon, 
@@ -9,7 +10,11 @@ import {
   Sparkles,
   Zap,
   Shield,
-  Layers
+  Layers,
+  Coins,
+  User,
+  LogIn,
+  MessageSquare
 } from 'lucide-react';
 
 const tools = [
@@ -49,6 +54,15 @@ const tools = [
     color: 'from-amber-500 to-orange-600',
     bgColor: 'bg-amber-500/10',
   },
+  {
+    id: 'submissions',
+    name: '需求投稿',
+    description: '有好的想法？提交需求建议，帮助我们做得更好',
+    icon: MessageSquare,
+    href: '/submissions',
+    color: 'from-emerald-500 to-teal-600',
+    bgColor: 'bg-emerald-500/10',
+  },
 ];
 
 const features = [
@@ -75,6 +89,8 @@ const features = [
 ];
 
 export default function HomePage() {
+  const { user, loading } = useAuth();
+
   return (
     <div className="relative">
       {/* Background Effects */}
@@ -100,10 +116,42 @@ export default function HomePage() {
             <Link href="/tools/image" className="text-sm text-white/70 hover:text-white transition-colors">
               工具
             </Link>
-            <Link href="#" className="text-sm text-white/70 hover:text-white transition-colors">
-              文档
+            <Link href="/submissions" className="text-sm text-white/70 hover:text-white transition-colors flex items-center gap-1">
+              <MessageSquare className="w-4 h-4" />
+              投稿箱
             </Link>
           </nav>
+          <div className="flex items-center gap-3">
+            {!loading && (
+              <>
+                {user ? (
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm text-white font-medium">{user.nickname || '用户'}</p>
+                      <p className="text-xs text-white/60 flex items-center gap-1">
+                        <Coins className="w-3 h-3 text-amber-400" />
+                        {user.credits} 积分
+                      </p>
+                    </div>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/auth"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    登录
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </header>
 
