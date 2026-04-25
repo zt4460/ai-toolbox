@@ -1,65 +1,126 @@
-# 项目上下文
+# AI 工具箱项目规范
 
-### 版本技术栈
+## 项目概述
+
+一站式 AI 创作工具箱网站，集成了多种 AI 能力，包括图片生成、视频生成、数字人创作、视频配音等功能。
+
+## 技术栈
 
 - **Framework**: Next.js 16 (App Router)
 - **Core**: React 19
 - **Language**: TypeScript 5
 - **UI 组件**: shadcn/ui (基于 Radix UI)
 - **Styling**: Tailwind CSS 4
+- **AI SDK**: coze-coding-dev-sdk
 
 ## 目录结构
 
 ```
-├── public/                 # 静态资源
-├── scripts/                # 构建与启动脚本
-│   ├── build.sh            # 构建脚本
-│   ├── dev.sh              # 开发环境启动脚本
-│   ├── prepare.sh          # 预处理脚本
-│   └── start.sh            # 生产环境启动脚本
-├── src/
-│   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
-│   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
-│   └── server.ts           # 自定义服务端入口
-├── next.config.ts          # Next.js 配置
-├── package.json            # 项目依赖管理
-└── tsconfig.json           # TypeScript 配置
+src/
+├── app/
+│   ├── page.tsx                    # 首页（工具卡片展示）
+│   ├── layout.tsx                  # 根布局
+│   ├── globals.css                 # 全局样式
+│   ├── api/                       # API 路由
+│   │   ├── image/generate/        # 图片生成 API
+│   │   ├── video/generate/        # 视频生成 API
+│   │   ├── digital-human/generate/ # 数字人 API
+│   │   └── lip-sync/generate/     # 视频配音 API
+│   └── tools/                     # 工具页面
+│       ├── image/                 # 图片生成页面
+│       ├── video/                 # 视频生成页面
+│       ├── digital-human/         # 数字人页面
+│       └── lip-sync/             # 视频配音页面
+├── components/ui/                 # shadcn/ui 组件库
+├── hooks/                         # 自定义 Hooks
+└── lib/utils.ts                   # 工具函数
 ```
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
+## 核心功能
 
-## 包管理规范
+### 1. 图片生成 (/tools/image)
+- 输入文字描述生成精美图片
+- 支持 2K/4K 分辨率
+- 使用 `ImageGenerationClient` 调用后端 API
 
-**仅允许使用 pnpm** 作为包管理器，**严禁使用 npm 或 yarn**。
-**常用命令**：
-- 安装依赖：`pnpm add <package>`
-- 安装开发依赖：`pnpm add -D <package>`
-- 安装所有依赖：`pnpm install`
-- 移除依赖：`pnpm remove <package>`
+### 2. 视频生成 (/tools/video)
+- 文字转视频、图片生视频
+- 支持多种分辨率 (480p/720p/1080p)
+- 支持多种时长 (4-12秒)
+- 可选生成同步音频
+- 使用 `VideoGenerationClient` 调用后端 API
 
-## 开发规范
+### 3. 数字人 (/tools/digital-human)
+- 创建 AI 数字人视频
+- 支持多种预设形象
+- 支持自定义文案或上传音频
+- 使用 `TTSClient` 生成配音
 
-### 编码规范
+### 4. 视频配音 (/tools/lip-sync)
+- 视频唇形同步配音
+- 支持多种语言和音色选择
+- 上传视频 + 输入文案 → 生成配音视频
+- 使用 `TTSClient` 生成配音
 
-- 默认按 TypeScript `strict` 心智写代码；优先复用当前作用域已声明的变量、函数、类型和导入，禁止引用未声明标识符或拼错变量名。
-- 禁止隐式 `any` 和 `as any`；函数参数、返回值、解构项、事件对象、`catch` 错误在使用前应有明确类型或先完成类型收窄，并清理未使用的变量和导入。
+## 开发命令
 
-### next.config 配置规范
+```bash
+# 安装依赖
+pnpm install
 
-- 配置的路径不要写死绝对路径，必须使用 path.resolve(__dirname, ...)、import.meta.dirname 或 process.cwd() 动态拼接。
+# 开发环境
+pnpm dev
 
-### Hydration 问题防范
+# 构建生产版本
+pnpm build
 
-1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据。**必须使用 'use client' 并配合 useEffect + useState 确保动态内容仅在客户端挂载后渲染**；同时严禁非法 HTML 嵌套（如 <p> 嵌套 <div>）。
-2. **禁止使用 head 标签**，优先使用 metadata，详见文档：https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-   1. 三方 CSS、字体等资源可在 `globals.css` 中顶部通过 `@import` 引入或使用 next/font
-   2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
-   3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
+# 生产环境
+pnpm start
+```
 
-## UI 设计与组件规范 (UI & Styling Standards)
+## API 路由
 
-- 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
-- Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+### POST /api/image/generate
+生成图片
+```json
+Request:
+{
+  "prompt": "图片描述文字",
+  "size": "2K" | "4K"
+}
+
+Response:
+{
+  "success": true,
+  "imageUrls": ["图片URL数组"]
+}
+```
+
+### POST /api/video/generate
+生成视频
+```json
+Request:
+{
+  "prompt": "视频描述",
+  "duration": "5",
+  "ratio": "16:9",
+  "resolution": "720p",
+  "generateAudio": true
+}
+
+Response:
+{
+  "success": true,
+  "videoUrl": "视频URL",
+  "lastFrameUrl": "最后一帧图片URL",
+  "taskId": "任务ID",
+  "status": "succeeded"
+}
+```
+
+## 注意事项
+
+1. **SDK 使用规范**: 所有 AI 能力必须通过 `coze-coding-dev-sdk` 调用，禁止直接调用外部 API
+2. **Header 转发**: 使用 `HeaderUtils.extractForwardHeaders()` 提取并转发请求头
+3. **后端处理**: AI 相关逻辑必须在后端 API 路由中处理，禁止在客户端暴露 SDK
+4. **错误处理**: API 调用必须包含完整的错误处理逻辑
