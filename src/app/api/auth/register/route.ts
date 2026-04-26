@@ -5,11 +5,11 @@ import bcrypt from 'bcryptjs';
 // 注册
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, nickname } = await request.json();
+    const { identifier, password, code } = await request.json();
 
-    if (!email || !password) {
+    if (!identifier || !password || !code) {
       return NextResponse.json(
-        { error: '邮箱和密码不能为空' },
+        { error: '账号、验证码和密码不能为空' },
         { status: 400 }
       );
     }
@@ -23,16 +23,64 @@ export async function POST(request: NextRequest) {
 
     const client = getSupabaseClient();
 
-    // 检查邮箱是否已存在
-    const { data: existingUser } = await client
-      .from('users')
-      .select('id')
-      .eq('email', email)
+    // 判断账号类型
+    const isEmail = identifier.includes('@');
+    const isPhone = /^1[3-9]\d{9}$/.test(identifier);
+    const username = isEmail ? null : isPhone ? null : identifier;
+
+    // 验证验证码
+    const { data: codeRecord, error: codeError } = await client
+      .from('verification_codes')
+      .select('*')
+      .eq('code', code)
+      .eq('identifier', identifier)
+      .eq('is_used', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
+
+    if (codeError) {
+      throw new Error(codeError.message);
+    }
+
+    if (!codeRecord) {
+      return NextResponse.json(
+        { error: '验证码无效或已过期' },
+        { status: 400 }
+      );
+    }
+
+    // 检查验证码是否过期（10分钟）
+    const codeTime = new Date(codeRecord.created_at).getTime();
+    const now = Date.now();
+    if (now - codeTime > 10 * 60 * 1000) {
+      return NextResponse.json(
+        { error: '验证码已过期，请重新获取' },
+        { status: 400 }
+      );
+    }
+
+    // 标记验证码已使用
+    await client
+      .from('verification_codes')
+      .update({ is_used: true })
+      .eq('id', codeRecord.id);
+
+    // 检查账号是否已存在
+    let query = client.from('users').select('id');
+    if (isEmail) {
+      query = query.eq('email', identifier);
+    } else if (isPhone) {
+      query = query.eq('phone', identifier);
+    } else {
+      query = query.eq('username', identifier);
+    }
+    
+    const { data: existingUser } = await query.maybeSingle();
 
     if (existingUser) {
       return NextResponse.json(
-        { error: '该邮箱已被注册' },
+        { error: '该账号已被注册' },
         { status: 400 }
       );
     }
@@ -41,19 +89,30 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // 创建用户
-    const { data: newUser, error } = await client
+    const insertData: Record<string, string | number> = {
+      password_hash: passwordHash,
+      credits: 100, // 新用户赠送100积分
+    };
+
+    if (isEmail) {
+      insertData.email = identifier;
+      insertData.nickname = identifier.split('@')[0];
+    } else if (isPhone) {
+      insertData.phone = identifier;
+      insertData.nickname = identifier.slice(-4);
+    } else {
+      insertData.username = username!;
+      insertData.nickname = username!;
+    }
+
+    const { data: newUser, error: insertError } = await client
       .from('users')
-      .insert({
-        email,
-        password_hash: passwordHash,
-        nickname: nickname || email.split('@')[0],
-        credits: 0,
-      })
-      .select('id, email, nickname, credits, created_at')
+      .insert(insertData)
+      .select('id, username, email, phone, nickname, credits, created_at')
       .single();
 
-    if (error) {
-      throw new Error(error.message);
+    if (insertError) {
+      throw new Error(insertError.message);
     }
 
     return NextResponse.json({

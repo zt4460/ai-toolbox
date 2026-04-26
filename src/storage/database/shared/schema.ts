@@ -12,7 +12,9 @@ export const users = pgTable(
 	"users",
 	{
 		id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-		email: varchar("email", { length: 255 }).notNull().unique(),
+		email: varchar("email", { length: 255 }),
+		username: varchar("username", { length: 64 }),
+		phone: varchar("phone", { length: 32 }),
 		password_hash: varchar("password_hash", { length: 255 }).notNull(),
 		nickname: varchar("nickname", { length: 64 }),
 		avatar_url: varchar("avatar_url", { length: 512 }),
@@ -24,7 +26,28 @@ export const users = pgTable(
 	},
 	(table) => [
 		index("users_email_idx").on(table.email),
+		index("users_username_idx").on(table.username),
+		index("users_phone_idx").on(table.phone),
 		index("users_created_at_idx").on(table.created_at),
+	]
+);
+
+// 验证码表
+export const verificationCodes = pgTable(
+	"verification_codes",
+	{
+		id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+		email: varchar("email", { length: 255 }),
+		phone: varchar("phone", { length: 32 }),
+		code: varchar("code", { length: 8 }).notNull(),
+		type: varchar("type", { length: 32 }).notNull(), // 'register', 'reset_password', 'login'
+		expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
+		used: boolean("used").default(false).notNull(),
+		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		index("verification_codes_email_idx").on(table.email),
+		index("verification_codes_phone_idx").on(table.phone),
 	]
 );
 

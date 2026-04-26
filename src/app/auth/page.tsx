@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers';
-import { ArrowLeft, LogIn, UserPlus, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, LogIn, UserPlus, Loader2, Sparkles, Send, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,24 +14,113 @@ export default function AuthPage() {
   const router = useRouter();
   const { login, register } = useAuth();
   
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [nickname, setNickname] = useState('');
+  // Tab 状态
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  
+  // 登录表单
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  
+  // 注册表单
+  const [regIdentifier, setRegIdentifier] = useState('');
+  const [regCode, setRegCode] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  
+  // 发送验证码
+  const [sendCodeLoading, setSendCodeLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [codeSent, setCodeSent] = useState(false);
+  
+  // 通用状态
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 验证码倒计时
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  // 判断账号类型
+  const getAccountType = (value: string): 'email' | 'phone' | 'username' | null => {
+    if (value.includes('@')) return 'email';
+    if (/^1[3-9]\d{9}$/.test(value)) return 'phone';
+    if (value.length >= 3) return 'username';
+    return null;
+  };
+
+  const getPlaceholder = (type: 'login' | 'register') => {
+    const value = type === 'login' ? loginIdentifier : regIdentifier;
+    const accountType = getAccountType(value);
+    if (accountType === 'email') return 'your@email.com';
+    if (accountType === 'phone') return '13800138000';
+    return '用户名 / 邮箱 / 手机号';
+  };
+
+  // 发送验证码
+  const handleSendCode = async () => {
+    if (!regIdentifier) {
+      setError('请先输入账号');
+      return;
+    }
+
+    const accountType = getAccountType(regIdentifier);
+    if (!accountType) {
+      setError('请输入有效的邮箱或手机号');
+      return;
+    }
+
+    setSendCodeLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: regIdentifier }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || '发送验证码失败');
+        return;
+      }
+
+      setCodeSent(true);
+      setCountdown(60);
+    } catch (err) {
+      setError('发送验证码失败，请稍后重试');
+    } finally {
+      setSendCodeLoading(false);
+    }
+  };
+
+  // 提交表单
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (activeTab === 'register') {
+      // 验证确认密码
+      if (regPassword !== regConfirmPassword) {
+        setError('两次输入的密码不一致');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       let result;
-      if (isLogin) {
-        result = await login(email, password);
+
+      if (activeTab === 'login') {
+        result = await login(loginIdentifier, loginPassword);
       } else {
-        result = await register(email, password, nickname);
+        result = await register(regIdentifier, regCode, regPassword);
       }
 
       if (result.success) {
@@ -43,6 +132,13 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 切换 Tab 重置状态
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'login' | 'register');
+    setError('');
+    setCodeSent(false);
   };
 
   return (
@@ -64,16 +160,16 @@ export default function AuthPage() {
               <Sparkles className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {isLogin ? '欢迎回来' : '创建账号'}
+              {activeTab === 'login' ? '欢迎回来' : '创建账号'}
             </h1>
             <p className="text-gray-500">
-              {isLogin ? '登录以继续使用 AI 工具箱' : '注册账号，开始您的 AI 创作之旅'}
+              {activeTab === 'login' ? '登录以继续使用 AI 工具箱' : '注册账号，开始您的 AI 创作之旅'}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            <Tabs defaultValue="login" onValueChange={(v) => setIsLogin(v === 'login')}>
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
                 <TabsTrigger value="login" className="data-[state=active]:bg-white">
                   <LogIn className="w-4 h-4 mr-2" />
@@ -85,18 +181,19 @@ export default function AuthPage() {
                 </TabsTrigger>
               </TabsList>
 
+              {/* 登录表单 */}
               <TabsContent value="login">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-email" className="text-gray-700 mb-2 block">
-                      邮箱
+                    <Label htmlFor="login-identifier" className="text-gray-700 mb-2 block">
+                      账号
                     </Label>
                     <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="login-identifier"
+                      type="text"
+                      placeholder="用户名 / 邮箱 / 手机号"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
                       required
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
@@ -110,8 +207,8 @@ export default function AuthPage() {
                       id="login-password"
                       type="password"
                       placeholder="输入密码"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
                       required
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
@@ -140,37 +237,63 @@ export default function AuthPage() {
                 </form>
               </TabsContent>
 
+              {/* 注册表单 */}
               <TabsContent value="register">
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* 账号 */}
                   <div>
-                    <Label htmlFor="reg-nickname" className="text-gray-700 mb-2 block">
-                      昵称
+                    <Label htmlFor="reg-identifier" className="text-gray-700 mb-2 block">
+                      账号
                     </Label>
                     <Input
-                      id="reg-nickname"
+                      id="reg-identifier"
                       type="text"
-                      placeholder="您的昵称（可选）"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="reg-email" className="text-gray-700 mb-2 block">
-                      邮箱
-                    </Label>
-                    <Input
-                      id="reg-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="用户名 / 邮箱 / 手机号"
+                      value={regIdentifier}
+                      onChange={(e) => setRegIdentifier(e.target.value)}
                       required
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
 
+                  {/* 验证码 */}
+                  <div>
+                    <Label htmlFor="reg-code" className="text-gray-700 mb-2 block">
+                      验证码
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="reg-code"
+                        type="text"
+                        placeholder="请输入验证码"
+                        value={regCode}
+                        onChange={(e) => setRegCode(e.target.value)}
+                        required
+                        maxLength={6}
+                        className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSendCode}
+                        disabled={sendCodeLoading || countdown > 0}
+                        className="shrink-0 border-gray-300 hover:bg-gray-50"
+                      >
+                        {sendCodeLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : countdown > 0 ? (
+                          `${countdown}s`
+                        ) : codeSent ? (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                        {countdown > 0 ? '' : !codeSent ? '获取验证码' : '已发送'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 密码 */}
                   <div>
                     <Label htmlFor="reg-password" className="text-gray-700 mb-2 block">
                       密码
@@ -179,8 +302,25 @@ export default function AuthPage() {
                       id="reg-password"
                       type="password"
                       placeholder="至少6位密码"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  {/* 确认密码 */}
+                  <div>
+                    <Label htmlFor="reg-confirm-password" className="text-gray-700 mb-2 block">
+                      确认密码
+                    </Label>
+                    <Input
+                      id="reg-confirm-password"
+                      type="password"
+                      placeholder="再次输入密码"
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
                       required
                       minLength={6}
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
@@ -214,12 +354,12 @@ export default function AuthPage() {
 
           {/* Switch Link */}
           <p className="text-center text-sm text-gray-500 mt-6">
-            {isLogin ? '还没有账号？' : '已有账号？'}
+            {activeTab === 'login' ? '还没有账号？' : '已有账号？'}
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => handleTabChange(activeTab === 'login' ? 'register' : 'login')}
               className="text-violet-600 hover:text-violet-700 ml-1 font-medium"
             >
-              {isLogin ? '立即注册' : '立即登录'}
+              {activeTab === 'login' ? '立即注册' : '立即登录'}
             </button>
           </p>
         </div>
