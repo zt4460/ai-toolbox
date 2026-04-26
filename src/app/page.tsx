@@ -532,27 +532,22 @@ export default function HomePage() {
             className="bg-white dark:bg-gray-800 rounded-2xl w-96 shadow-xl flex flex-col max-h-[80vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 头部 */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            {/* 第一行：标题 + 余额 + 关闭按钮 */}
+            <div className="flex items-center justify-between px-5 py-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">积分余额</h3>
-              <button 
-                onClick={() => setShowCredits(false)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* 余额显示 */}
-            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">{credits}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">可用积分</div>
+              <div className="flex items-center gap-4">
+                <span className="text-lg font-bold text-gray-900 dark:text-white">{credits} <span className="text-sm font-normal text-gray-500">可用积分</span></span>
+                <button 
+                  onClick={() => setShowCredits(false)}
+                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
             {/* Tab 切换 */}
-            <div className="flex border-b border-gray-100 dark:border-gray-700">
+            <div className="flex border-b border-gray-100 dark:border-gray-700 px-5">
               {(['all', 'recharge', 'consume', 'gift'] as const).map((tab) => (
                 <button
                   key={tab}
