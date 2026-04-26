@@ -115,6 +115,7 @@ export default function HomePage() {
   const [showInspiration, setShowInspiration] = useState(false);
   const [showRatioSelect, setShowRatioSelect] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const ratioRef = useRef<HTMLDivElement>(null);
   
   // 积分余额弹窗状态
   const [creditTab, setCreditTab] = useState<'all' | 'recharge' | 'consume' | 'gift'>('all');
@@ -174,6 +175,20 @@ export default function HomePage() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  // 点击外部关闭弹出层
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ratioRef.current && !ratioRef.current.contains(event.target as Node)) {
+        setShowRatioSelect(false);
+      }
+      if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
+        setShowModelSelect(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 获取积分历史
   const fetchCreditHistory = useCallback(async () => {
@@ -420,7 +435,10 @@ export default function HomePage() {
             {/* 功能设置行 */}
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               {/* 参考图上传 */}
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              <button 
+                onClick={() => document.getElementById('main-reference-upload')?.click()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
                 <Upload className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                   {referenceImage ? '已上传' : '参考图'}
@@ -472,7 +490,7 @@ export default function HomePage() {
               </div>
 
               {/* 比例选择 */}
-              <div className="relative">
+              <div className="relative" ref={ratioRef}>
                 <button 
                   onClick={() => setShowRatioSelect(!showRatioSelect)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
