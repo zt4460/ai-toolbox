@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   Wand2,
@@ -113,6 +114,18 @@ export default function HomePage() {
   const [showRatioSelect, setShowRatioSelect] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   
+  // 积分余额弹窗状态
+  const [creditTab, setCreditTab] = useState<'all' | 'recharge' | 'consume' | 'gift'>('all');
+  const [creditHistory, setCreditHistory] = useState<Array<{
+    id: string;
+    type: string;
+    amount: number;
+    balance_after: number;
+    description: string;
+    created_at: string;
+  }>>([]);
+  const [creditLoading, setCreditLoading] = useState(false);
+  
   // 创作设置状态
   const [prompt, setPrompt] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -159,6 +172,28 @@ export default function HomePage() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  // 获取积分历史
+  const fetchCreditHistory = useCallback(async () => {
+    setCreditLoading(true);
+    try {
+      const res = await fetch(`/api/credits/history?type=${creditTab}`);
+      const data = await res.json();
+      if (data.success) {
+        setCreditHistory(data.transactions || []);
+      }
+    } catch (error) {
+      console.error('获取积分历史失败:', error);
+    } finally {
+      setCreditLoading(false);
+    }
+  }, [creditTab]);
+
+  useEffect(() => {
+    if (showCredits) {
+      fetchCreditHistory();
+    }
+  }, [showCredits, creditTab, fetchCreditHistory]);
 
   // 生成图片 - 使用 useCallback 避免重复创建
   const handleGenerate = useCallback(async () => {
@@ -231,12 +266,13 @@ export default function HomePage() {
           >
             <Wand2 className="w-6 h-6" />
           </button>
-          <button
+          <Link
+            href="/assets"
             className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
             title="资产"
           >
             <FolderOpen className="w-6 h-6" />
-          </button>
+          </Link>
         </div>
         
         {/* 底部功能区 */}
@@ -493,29 +529,81 @@ export default function HomePage() {
       {showCredits && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowCredits(false)}>
           <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-80 shadow-xl"
+            className="bg-white dark:bg-gray-800 rounded-2xl w-96 shadow-xl flex flex-col max-h-[80vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-6">
+            {/* 头部 */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">积分余额</h3>
               <button 
                 onClick={() => setShowCredits(false)}
-                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="text-center mb-6">
-              <div className="text-4xl font-bold text-gray-900 dark:text-white mb-1">{credits}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">可用积分</div>
+
+            {/* 余额显示 */}
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{credits}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">可用积分</div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <button className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity">
-                立即充值
-              </button>
-              <button className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                激活卡密
-              </button>
+
+            {/* Tab 切换 */}
+            <div className="flex border-b border-gray-100 dark:border-gray-700">
+              {(['all', 'recharge', 'consume', 'gift'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setCreditTab(tab)}
+                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                    creditTab === tab
+                      ? 'text-pink-500 border-b-2 border-pink-500'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {tab === 'all' ? '全部' : tab === 'recharge' ? '充值' : tab === 'consume' ? '消耗' : '赠送'}
+                </button>
+              ))}
+            </div>
+
+            {/* 明细列表（可滚动） */}
+            <div className="flex-1 overflow-y-auto max-h-64 px-5 py-3">
+              {creditLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                </div>
+              ) : creditHistory.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  暂无记录
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {creditHistory.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                          item.amount > 0 
+                            ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                        }`}>
+                          {item.amount > 0 ? '+' : ''}{item.amount}
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-700 dark:text-gray-200">{item.description}</div>
+                          <div className="text-xs text-gray-400">
+                            {new Date(item.created_at).toLocaleDateString('zh-CN')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {item.balance_after}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
