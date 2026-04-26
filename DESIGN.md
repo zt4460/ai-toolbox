@@ -1,300 +1,610 @@
 ---
-title: AI 工具箱 - Design System
-description: 让AI变成好用的牛马 - 极简现代 AI 创作工具箱
-version: 3.0.0
+# AI 工具箱 - 设计系统文档
 
-# Color Palette
-
-## Primary Colors
-primary: "#111827"                    # Gray 900 - Main text color
-primary-light: "#374151"               # Gray 700 - Secondary emphasis
-primary-foreground: "#ffffff"           # White text on dark
-
-## Background Colors
-background: "#F8F9FA"                  # Light gray background
-background-card: "#ffffff"             # White - Card surfaces
-background-input: "#f9fafb"           # Gray 50 - Input fields
-background-hover: "#f3f4f6"            # Gray 100 - Hover state
-
-## Text Colors
-text-primary: "#111827"                # Gray 900 - Primary text
-text-secondary: "#6b7280"               # Gray 500 - Secondary text
-text-muted: "#9ca3af"                  # Gray 400 - Muted text
-text-placeholder: "#d1d5db"            # Gray 300 - Placeholder
-
-## Border Colors
-border: "#e5e7eb"                      # Gray 200 - Default border
-border-hover: "#d1d5db"               # Gray 300 - Hover border
-
-## Accent Colors
-accent-gradient: "linear-gradient(135deg, #ec4899, #8b5cf6)"  # Pink to Purple gradient
-accent-pink: "#ec4899"                # Pink 500 - Primary action
-accent-pink-bg: "#fdf2f8"              # Pink 50 - Pink tint
-accent-purple: "#8b5cf6"               # Purple 500 - Secondary action
-accent-purple-bg: "#f5f3ff"            # Purple 50 - Purple tint
-accent-blue: "#3b82f6"                 # Blue 500 - Credits/Info
-accent-green: "#10b981"                # Green 500 - Success
-
-## Status Colors
-error: "#ef4444"                       # Red 500 - Error
-error-bg: "#fef2f2"                    # Red 50 - Error background
-warning: "#f59e0b"                    # Amber 500 - Warning
-info: "#3b82f6"                       # Blue 500 - Info
-
-# Typography
-
-## Font Families
-font-sans: "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-
-## Font Sizes
-text-xs: "0.75rem"                     # 12px - Labels, timestamps
-text-sm: "0.875rem"                    # 14px - Body text, buttons
-text-base: "1rem"                      # 16px - Default
-text-lg: "1.125rem"                    # 18px - Subheadings
-text-xl: "1.25rem"                     # 20px - Section titles
-text-2xl: "1.5rem"                     # 24px - Page titles
-
-## Font Weights
-font-normal: "400"                     # Normal
-font-medium: "500"                     # Medium
-font-semibold: "600"                   # Semibold - Headings
-font-bold: "700"                       # Bold
-
-# Spacing System
-
-## Base Unit
-base-unit: "4px"                      # 4px grid system
-
-## Spacing Scale
-space-1: "4px"                         # 4px
-space-2: "8px"                         # 8px
-space-3: "12px"                        # 12px
-space-4: "16px"                        # 16px
-space-5: "20px"                        # 20px
-space-6: "24px"                        # 24px
-space-8: "32px"                        # 32px
-
-## Component Spacing
-header-height: "56px"                  # Header height
-sidebar-width: "48px"                   # Narrow sidebar width
-sidebar-expanded: "280px"             # Expanded sidebar width
-main-padding-x: "24px"                 # Main content horizontal padding
-main-padding-y: "32px"                 # Main content vertical padding
-
-# Border Radius
-
-## Radius Scale
-radius-sm: "6px"                       # 6px - Small elements
-radius-md: "8px"                       # 8px - Buttons, inputs
-radius-lg: "12px"                      # 12px - Cards
-radius-xl: "16px"                      # 16px - Large cards, panels
-radius-2xl: "20px"                     # 20px - Modals
-radius-full: "9999px"                  # Full circle/rounded pill
-
-# Shadows
-
-shadow-sm: "0 1px 2px rgba(0,0,0,0.05)"           # Subtle
-shadow-md: "0 4px 6px rgba(0,0,0,0.07)"           # Medium - Cards
-shadow-lg: "0 10px 15px rgba(0,0,0,0.1)"          # Large - Floating panels
-
-# Transitions
-
-transition-fast: "150ms"              # Fast transitions
-transition-base: "200ms"              # Default transitions
-transition-slow: "300ms"              # Slow transitions
-ease-default: "cubic-bezier(0.4, 0, 0.2, 1)"
+## 设计元数据
+```yaml
+name: AI 工具箱
+version: 1.0.0
+description: 一站式 AI 创作工具集，集成图片生成、视频生成、数字人创作、视频配音等功能
+```
 
 ---
 
-# AI 工具箱 - Design Language
+## 颜色系统 (Colors)
 
-## Overview
-
-采用极简现代的轻量工具风格（参考 Stitch/Coze 平台）。整体视觉呈现简洁、专业、轻量化的特点，强调功能性和高效率。采用极窄侧边栏 + 悬浮底部操作面板的布局。
-
-## Design Principles
-
-### 1. Minimal & Efficient
-- **极窄侧边栏**: 48px 宽，纯图标导航，最大化主内容区
-- **充足留白**: 主内容区大量留白，呼吸感强
-- **色彩克制**: 低饱和度莫兰迪色系，避免视觉疲劳
-
-### 2. Clear Hierarchy
-- **文字层级清晰**: 通过字号、字重、颜色区分优先级
-- **时间线布局**: 按「今天」「昨天」等时间分组展示
-- **功能聚焦**: 底部悬浮面板承载核心操作
-
-### 3. Floating Action Panel
-- **底部悬浮**: 24px 圆角卡片悬浮于页面底部
-- **阴影分层**: 轻微阴影与主内容区分隔
-- **渐变按钮**: 粉色到紫色的渐变按钮突出核心功能
-
-### 4. Interactive States
-- **Hover**: 边框颜色加深，背景微变
-- **Active**: 背景填充，颜色强调
-- **Disabled**: 透明度降低
-- **Loading**: 简洁旋转加载动画
-
-## Layout Structure
-
-### Homepage Layout
-```
-┌────┬────────────────────────────────────────────────────────────┐
-│    │  Header: 标题 + 搜索 + 视图切换 + 联系我                   │
-│ S  ├────────────────────────────────────────────────────────────┤
-│ I  │                                                            │
-│ D  │   Content Area (时间线布局)                                │
-│ E  │   ┌──────────────────────────────────────────────────┐    │
-│ B  │   │  今天                                               │    │
-│ A  │   │  ┌────────────────────────────────────────────┐  │    │
-│ R  │   │  │  创作卡片 (缩略图 + 标题 + 类型 + 时间)    │  │    │
-│    │   │  └────────────────────────────────────────────┘  │    │
-│ 4  │   │  ┌────────────────────────────────────────────┐  │    │
-│ 8  │   │  │  创作卡片                                    │  │    │
-│ p  │   │  └────────────────────────────────────────────┘  │    │
-│ x  │   │                                                    │    │
-│    │   │  昨天                                               │    │
-│    │   │  ...                                                │    │
-│    │   └──────────────────────────────────────────────────┘    │
-│    │                                                            │
-├────┴────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  底部悬浮创作面板                                          │   │
-│  │  [图片] [视频] [数字人] [配音]  |  输入框 + AI灵感 + 积分  │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────────────┘
+### 浅色模式 (Light Mode)
+```yaml
+colors:
+  background:     "#FFFFFF"      # 纯白背景
+  foreground:     "#252525"      # 深灰文字 (oklch 0.145)
+  primary:        "#353535"      # 主按钮/重要元素
+  primary-foreground: "#FAFAFA"  # 主按钮文字
+  secondary:     "#F7F7F7"      # 次要背景
+  secondary-foreground: "#353535"
+  muted:         "#F7F7F7"      # 弱化背景
+  muted-foreground: "#8E8E8E"   # 次要文字 (oklch 0.556)
+  accent:        "#F7F7F7"      # 强调背景
+  accent-foreground: "#353535"
+  destructive:   "#DC2626"      # 危险/错误色
+  destructive-foreground: "#FFFFFF"
+  border:        "#EBEBEB"      # 边框色 (oklch 0.922)
+  input:         "#EBEBEB"      # 输入框边框
+  ring:          "#B3B3B3"      # 聚焦环 (oklch 0.708)
+  card:          "#FFFFFF"      # 卡片背景
+  card-foreground: "#252525"
+  popover:       "#FFFFFF"      # 弹出层背景
+  popover-foreground: "#252525"
+  chart-1:       "#A855F7"      # 紫色图表
+  chart-2:       "#22C55E"      # 绿色图表
+  chart-3:       "#C4B5FD"      # 浅紫图表
+  chart-4:       "#4ADE80"      # 亮绿图表
+  chart-5:       "#C084FC"      # 紫罗兰图表
+  sidebar:       "#FFFFFF"      # 侧边栏背景
+  sidebar-foreground: "#252525"
+  sidebar-border: "#EBEBEB"
+  sidebar-accent: "#F7F7F7"
+  sidebar-accent-foreground: "#353535"
+  sidebar-primary: "#353535"
+  sidebar-primary-foreground: "#FAFAFA"
+  sidebar-ring:   "#B3B3B3"
 ```
 
-### Sidebar Design
-- 固定宽度 48px，纯图标导航
-- 垂直排列：创作、资产、消息、设置
-- 选中状态：深色背景 + 图标高亮
-- 未选中：浅灰色图标
-- 底部用户头像入口
-
-### Floating Action Panel
-- 位置：固定在底部，距底部 24px
-- 宽度：从侧边栏右边缘到屏幕右边缘
-- 圆角：24px
-- 阴影：`0 10px 15px rgba(0,0,0,0.1)`
-- 内部结构：
-  - 类型切换：胶囊式切换按钮组
-  - 输入区域：大文本框 + 渐变发送按钮
-  - 底部工具栏：AI灵感、精准改图 Beta、积分显示
-
-## Component Specifications
-
-### Navigation Icon Button
-```css
-/* Default */
-width: 40px;
-height: 40px;
-border-radius: 12px;
-color: #9ca3af;  /* Gray 400 */
-
-/* Hover */
-color: #374151;  /* Gray 700 */
-background: #f3f4f6;  /* Gray 100 */
-
-/* Active */
-background: #f3f4f6;
-color: #111827;  /* Gray 900 */
+### 深色模式 (Dark Mode)
+```yaml
+colors:
+  background:     "#252525"      # 深灰背景
+  foreground:     "#FAFAFA"      # 浅色文字
+  primary:        "#FAFAFA"      # 主按钮
+  primary-foreground: "#353535"
+  secondary:      "#353535"     # 次要背景
+  secondary-foreground: "#FAFAFA"
+  muted:          "#353535"     # 弱化背景
+  muted-foreground: "#B3B3B3"   # 次要文字
+  accent:         "#353535"     # 强调背景
+  accent-foreground: "#FAFAFA"
+  destructive:    "#B91C1C"     # 危险/错误色
+  destructive-foreground: "#FFFFFF"
+  border:         "rgba(255,255,255,0.1)"
+  input:          "rgba(255,255,255,0.15)"
+  ring:           "#8E8E8E"     # 聚焦环
+  card:           "#353535"     # 卡片背景
+  card-foreground: "#FAFAFA"
+  popover:        "#353535"     # 弹出层背景
+  popover-foreground: "#FAFAFA"
+  chart-1:        "#7C3AED"     # 深紫色图表
+  chart-2:        "#10B981"     # 深绿色图表
+  chart-3:        "#8B5CF6"     # 紫色图表
+  chart-4:        "#34D399"     # 翠绿图表
+  chart-5:        "#A78BFA"     # 浅紫图表
+  sidebar:        "#1A1A1A"     # 侧边栏背景
+  sidebar-foreground: "#FAFAFA"
+  sidebar-border:  "rgba(255,255,255,0.1)"
+  sidebar-accent: "#252525"
+  sidebar-accent-foreground: "#FAFAFA"
+  sidebar-primary: "#7C3AED"
+  sidebar-primary-foreground: "#FFFFFF"
+  sidebar-ring:   "#8E8E8E"
 ```
 
-### Card Component
-```css
-background: #ffffff;
-border-radius: 16px;
-border: 1px solid #e5e7eb;
-padding: 16px;
-transition: box-shadow 200ms;
+---
+
+## 字体系统 (Typography)
+
+### 字体族 (Font Families)
+```yaml
+fonts:
+  sans: |
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif
+  mono: |
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace
+  serif: |
+    'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif,
+    Georgia, Cambria, 'Times New Roman', Times, serif
 ```
 
-### Pill Toggle Button
-```css
-/* Inactive */
-background: #f3f4f6;
-color: #6b7280;
-
-/* Active */
-background: #ffffff;
-color: #111827;
-box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+### 字号 (Font Sizes)
+```yaml
+fontSizes:
+  xs:    "0.75rem"    # 12px - 辅助/标签文字
+  sm:    "0.875rem"   # 14px - 次要文字
+  base:  "1rem"       # 16px - 正文
+  lg:    "1.125rem"   # 18px - 大号正文
+  xl:    "1.25rem"    # 20px - 小标题
+  "2xl": "1.5rem"     # 24px - 标题
+  "3xl": "1.875rem"   # 30px - 大标题
+  "4xl": "2.25rem"    # 36px - 页面标题
+  "5xl": "3rem"       # 48px - 巨型标题
 ```
 
-### Gradient Action Button
-```css
-background: linear-gradient(135deg, #ec4899, #8b5cf6);
-border-radius: 12px;
-width: 48px;
-height: 48px;
+### 行高 (Line Heights)
+```yaml
+lineHeights:
+  none:   "1"
+  tight:  "1.25"
+  snug:   "1.375"
+  normal: "1.5"
+  relaxed: "1.625"
+  loose:  "2"
 ```
 
-### Primary Button
-```css
-background: #111827;
-color: #ffffff;
-border-radius: 12px;
-padding: 8px 16px;
-font-weight: 500;
+### 字重 (Font Weights)
+```yaml
+fontWeights:
+  normal:   "400"
+  medium:   "500"
+  semibold: "600"
+  bold:     "700"
 ```
 
-### Input Field
-```css
-background: #f9fafb;
-border: 1px solid #e5e7eb;
-border-radius: 12px;
-padding: 12px 16px;
+---
+
+## 间距系统 (Spacing)
+```yaml
+spacing:
+  0:  "0"
+  0.5: "0.125rem"  # 2px
+  1:  "0.25rem"    # 4px
+  1.5: "0.375rem"  # 6px
+  2:  "0.5rem"     # 8px
+  2.5: "0.625rem"  # 10px
+  3:  "0.75rem"    # 12px
+  3.5: "0.875rem"  # 14px
+  4:  "1rem"       # 16px
+  5:  "1.25rem"    # 20px
+  6:  "1.5rem"     # 24px
+  7:  "1.75rem"    # 28px
+  8:  "2rem"       # 32px
+  9:  "2.25rem"    # 36px
+  10: "2.5rem"     # 40px
+  12: "3rem"       # 48px
+  14: "3.5rem"     # 56px
+  16: "4rem"       # 64px
+  20: "5rem"       # 80px
+  24: "6rem"       # 96px
+  32: "8rem"       # 128px
 ```
 
-## Icon System
+---
 
-### Icons Used
-- 侧边栏：`Wand2`, `FolderOpen`, `MessageSquare`, `Settings`
-- 功能：`Sparkles` (AI灵感), `Edit3` (精准改图), `Upload`, `Coins`
-- 操作：`Send`, `Download`, `Copy`, `RotateCcw`, `Search`
-- 状态：`List`, `Grid3X3`, `ChevronDown`, `X`
-- 内容：`Image`, `Video`, `User`, `Mail`
-- 尺寸：16-20px，stroke-width: 1.5-2
+## 圆角系统 (Border Radius)
+```yaml
+borderRadius:
+  none:  "0"
+  sm:    "0.25rem"                          # 4px
+  DEFAULT: "0.375rem"                       # 6px
+  md:    "0.5rem"                          # 8px
+  lg:    "0.625rem"                        # 10px (基础圆角)
+  xl:    "0.75rem"                         # 12px
+  "2xl": "1rem"                            # 16px
+  "3xl": "1.5rem"                          # 24px
+  full:  "9999px"                          # 全圆角/胶囊
+```
 
-### Icon Style
-- 线性极简图标
-- 2px 左右的线条
-- 统一 stroke-width
-- 高辨识度
+---
 
-## Color Usage
+## 阴影系统 (Shadows)
+```yaml
+shadows:
+  sm:    "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+  DEFAULT: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+  md:    "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+  lg:    "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+  xl:    "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+  "2xl": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+  "3xl": "0 32px 64px -12px rgb(0 0 0 / 0.3)"
+  inner: "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)"
+  glow:  "0 0 20px rgb(168 85 247 / 0.3)"  # 发光效果
+  glow-lg: "0 0 40px rgb(168 85 247 / 0.4)"
+```
 
-### Primary Text
-- 标题：Gray 900 (#111827)
-- 正文：Gray 700 (#374151)
-- 辅助：Gray 500 (#6b7280)
+---
 
-### Status Indicators
-- 积分不足：Red 500 (#ef4444)
-- 会员/Beta 标签：Blue 500 (#3b82f6)
+## 动画系统 (Motion)
 
-### Accent Elements
-- AI灵感按钮：Pink 50 背景 + Pink 600 文字
-- 精准改图：Gray 100 背景
-- Beta 标签：Blue 500 填充白字
+### 过渡时长 (Transition Duration)
+```yaml
+duration:
+  0:    "0ms"
+  75:   "75ms"
+  100:  "100ms"
+  150:  "150ms"
+  200:  "200ms"
+  300:  "300ms"
+  500:  "500ms"
+  700:  "700ms"
+  1000: "1000ms"
+```
 
-## Responsive Behavior
+### 缓动函数 (Easing)
+```yaml
+easing:
+  DEFAULT:  "cubic-bezier(0.4, 0, 0.2, 1)"
+  linear:   "linear"
+  in:       "cubic-bezier(0.4, 0, 1, 1)"
+  out:      "cubic-bezier(0, 0, 0.2, 1)"
+  "in-out": "cubic-bezier(0.4, 0, 0.2, 1)"
+  bounce:   "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+  spring:   "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+```
 
-### Desktop (>1024px)
-- 侧边栏固定 48px
-- 底部面板固定在视口底部
-- 主内容区自适应
+### 动画配置 (Animation Config)
+```yaml
+animation:
+  fade-in:
+    duration: "200ms"
+    easing: "ease-out"
+  fade-out:
+    duration: "150ms"
+    easing: "ease-in"
+  slide-up:
+    duration: "300ms"
+    easing: "ease-out"
+  slide-down:
+    duration: "300ms"
+    easing: "ease-in"
+  scale-in:
+    duration: "200ms"
+    easing: "spring"
+  spin:
+    duration: "1000ms"
+    easing: "linear"
+    iteration: "infinite"
+  pulse:
+    duration: "2000ms"
+    easing: "ease-in-out"
+    iteration: "infinite"
+```
 
-### Tablet (768-1024px)
-- 侧边栏保持 48px
-- 底部面板宽度自适应
+---
 
-## Future Considerations
+## 层级系统 (Z-Index)
+```yaml
+zIndex:
+  0:   "0"
+  10:  "10"
+  20:  "20"
+  30:  "30"
+  40:  "40"
+  50:  "50"
+  dropdown:  "1000"
+  sticky:    "1100"
+  fixed:     "1200"
+  modal-backdrop: "1240"
+  modal:         "1250"
+  popover:       "1300"
+  tooltip:       "1400"
+  toast:         "1500"
+```
 
-- [ ] 暗色模式适配
-- [ ] 骨架屏加载状态
-- [ ] Toast 通知组件
-- [ ] 下拉选择器组件
-- [ ] 工具提示文档
-- [ ] 响应式移动端适配
+---
+
+## 断点系统 (Breakpoints)
+```yaml
+breakpoints:
+  sm:   "640px"   # 小屏手机
+  md:   "768px"   # 平板
+  lg:   "1024px"  # 小屏笔记本
+  xl:   "1280px"  # 桌面
+  "2xl": "1536px" # 大屏桌面
+```
+
+---
+
+## 组件规范
+
+### 按钮 (Button)
+```yaml
+button:
+  # 主要按钮
+  primary:
+    background: "primary"
+    foreground: "primary-foreground"
+    hover-background: "opacity-90"
+    border-radius: "lg"
+    padding: "10px 20px"
+    font-weight: "500"
+    
+  # 次要按钮
+  secondary:
+    background: "secondary"
+    foreground: "secondary-foreground"
+    hover-background: "opacity-80"
+    border-radius: "lg"
+    padding: "10px 20px"
+    
+  # 幽灵按钮
+  ghost:
+    background: "transparent"
+    hover-background: "accent"
+    border-radius: "lg"
+    
+  # 危险按钮
+  destructive:
+    background: "destructive"
+    foreground: "destructive-foreground"
+    hover-background: "opacity-90"
+    border-radius: "lg"
+    
+  # 尺寸
+  sizes:
+    sm:   padding: "6px 12px", font-size: "sm"
+    md:   padding: "10px 16px", font-size: "sm"
+    lg:   padding: "12px 24px", font-size: "base"
+    icon: padding: "10px", size: "40px"
+```
+
+### 输入框 (Input)
+```yaml
+input:
+  background: "background"
+  border: "border"
+  border-radius: "lg"
+  padding: "10px 14px"
+  font-size: "sm"
+  focus-ring: "ring"
+  focus-ring-offset: "2px"
+  placeholder-color: "muted-foreground"
+  disabled:
+    opacity: "0.5"
+    cursor: "not-allowed"
+    
+  dark:
+    background: "secondary"
+    border: "rgba(255,255,255,0.15)"
+    foreground: "foreground"
+```
+
+### 卡片 (Card)
+```yaml
+card:
+  background: "card"
+  border: "border"
+  border-radius: "xl"
+  padding: "16px"
+  shadow: "shadow"
+  
+  header:
+    padding-bottom: "12px"
+    border-bottom: "1px solid border"
+    font-size: "lg"
+    font-weight: "semibold"
+    
+  footer:
+    padding-top: "12px"
+    border-top: "1px solid border"
+    
+  dark:
+    background: "card"
+    border: "rgba(255,255,255,0.1)"
+```
+
+### 弹窗 (Modal/Dialog)
+```yaml
+modal:
+  overlay:
+    background: "rgba(0, 0, 0, 0.5)"
+    backdrop-blur: "4px"
+    
+  content:
+    background: "popover"
+    border-radius: "2xl"
+    padding: "24px"
+    shadow: "shadow-2xl"
+    max-width: "90vw"
+    max-height: "85vh"
+    
+  header:
+    padding-bottom: "16px"
+    margin-bottom: "16px"
+    border-bottom: "1px solid border"
+    
+  body:
+    overflow-y: "auto"
+    
+  footer:
+    padding-top: "16px"
+    margin-top: "16px"
+    border-top: "1px solid border"
+    display: "flex"
+    justify-content: "flex-end"
+    gap: "12px"
+```
+
+### 标签页 (Tabs)
+```yaml
+tabs:
+  container:
+    border-bottom: "1px solid border"
+    
+  list:
+    display: "flex"
+    gap: "4px"
+    
+  trigger:
+    padding: "8px 16px"
+    font-size: "sm"
+    font-weight: "medium"
+    color: "muted-foreground"
+    background: "transparent"
+    border-radius: "md"
+    transition: "all duration-150"
+    
+  active:
+    color: "foreground"
+    background: "accent"
+    
+  indicator:
+    height: "2px"
+    background: "destructive"  # 红色强调
+    border-radius: "full"
+    
+  content:
+    padding-top: "16px"
+```
+
+### 下拉菜单 (Dropdown)
+```yaml
+dropdown:
+  content:
+    background: "popover"
+    border: "1px solid border"
+    border-radius: "lg"
+    padding: "6px"
+    shadow: "shadow-lg"
+    min-width: "180px"
+    z-index: "dropdown"
+    
+  item:
+    padding: "8px 12px"
+    font-size: "sm"
+    border-radius: "md"
+    cursor: "pointer"
+    transition: "background duration-150"
+    
+  item-hover:
+    background: "accent"
+    
+  separator:
+    height: "1px"
+    background: "border"
+    margin: "6px -6px"
+    
+  dark:
+    content:
+      background: "popover"
+      border: "rgba(255,255,255,0.1)"
+```
+
+---
+
+## 布局规范
+
+### 页面结构 (Layout)
+```yaml
+layout:
+  # 侧边栏
+  sidebar:
+    width: "48px"
+    height: "100vh"
+    position: "fixed"
+    left: "0"
+    top: "0"
+    z-index: "40"
+    background: "rgba(255,255,255,0.8)"
+    backdrop-blur: "12px"
+    border-right: "1px solid border"
+    icon-size: "24px"
+    icon-gap: "16px"
+    
+  # 主内容区
+  main:
+    margin-left: "48px"
+    min-height: "100vh"
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)"
+    
+  # 顶部工具栏
+  toolbar:
+    height: "48px"
+    background: "rgba(255,255,255,0.05)"
+    backdrop-blur: "8px"
+    border-bottom: "1px solid rgba(255,255,255,0.1)"
+    padding: "0 16px"
+    display: "flex"
+    align-items: "center"
+    justify-content: "space-between"
+    
+  # 底部创作面板
+  createPanel:
+    position: "fixed"
+    bottom: "24px"
+    left: "50%"
+    transform: "translateX(-50%)"
+    width: "calc(100% - 96px)"
+    max-width: "800px"
+    background: "rgba(255,255,255,0.95)"
+    backdrop-blur: "16px"
+    border-radius: "20px"
+    padding: "16px 20px"
+    box-shadow: "0 25px 50px -12px rgba(0,0,0,0.25)"
+    z-index: "30"
+    border: "1px solid border"
+```
+
+### 响应式策略
+```yaml
+responsive:
+  mobile-first: true
+  container-padding:
+    default: "16px"
+    sm: "24px"
+    lg: "32px"
+    xl: "48px"
+```
+
+---
+
+## 功能色语义
+
+```yaml
+semanticColors:
+  # 状态色
+  success:    "#22C55E"   # 成功/正向操作
+  warning:    "#F59E0B"   # 警告/注意
+  error:      "#DC2626"   # 错误/危险
+  info:       "#3B82F6"   # 信息提示
+  
+  # 积分相关
+  credit:
+    add:    "#22C55E"     # 充值/获得
+    minus:  "#DC2626"     # 消耗
+    gift:   "#8B5CF6"     # 赠送
+    neutral: "#6B7280"     # 中性
+    
+  # 任务状态
+  status:
+    pending:    "#F59E0B"  # 待处理
+    processing: "#3B82F6"  # 处理中
+    completed:  "#22C55E" # 已完成
+    failed:     "#DC2626"  # 失败
+```
+
+---
+
+## 设计理念
+
+### 视觉风格
+- **极简主义**: 干净整洁，大量留白，减少视觉噪音
+- **毛玻璃效果**: 广泛使用 `backdrop-blur` 创建层次感
+- **柔和阴影**: 适度的阴影深度，避免过于厚重
+- **圆角统一**: 所有元素使用 `lg (10px)` 作为基础圆角
+
+### 色彩策略
+- **中性主色**: 黑白灰色系确保专业感和高可读性
+- **功能性强调**: 红色用于重要操作和当前选中状态
+- **渐变背景**: 深色页面使用蓝灰色渐变，增加视觉层次
+- **高对比度**: 确保文字和背景有足够的对比度
+
+### 布局特点
+- **极窄侧边栏**: 48px 宽，仅包含功能图标
+- **底部悬浮面板**: 创作功能通过浮动底部面板触发
+- **居中内容**: 主要内容区域居中，最大宽度控制
+- **无对话框**: 资产页面等区域不使用传统对话框
+
+### 交互原则
+- **即时反馈**: hover/active/focus 状态清晰可见
+- **平滑过渡**: 所有状态变化使用 150-300ms 过渡
+- **加载状态**: 使用骨架屏和脉冲动画表示加载中
+- **错误提示**: 红色边框和图标标识错误状态
+
+### 字体规范
+- **中文优先**: PingFang SC / 微软雅黑确保中文显示最佳
+- **系统字体兜底**: 确保各平台都能正常渲染
+- **无衬线主体**: 现代简洁的视觉风格
+
+### 可访问性
+- **焦点可见**: 所有交互元素有明显的 focus ring
+- **色彩对比**: 满足 WCAG AA 标准 (4.5:1)
+- **触控友好**: 移动端点击区域至少 44px
