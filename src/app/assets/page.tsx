@@ -28,13 +28,14 @@ import { useAuth } from '@/app/providers';
 interface GenerationRecord {
   id: string;
   image_url: string;
-  video_url?: string; // 视频URL（可选）
+  video_url?: string;
   prompt: string;
   resolution: string;
   ratio: string;
   credits_cost: number;
   created_at: string;
-  type?: 'image' | 'video'; // 资源类型
+  type?: 'image' | 'video' | 'digital_human' | 'lip_sync';
+  status?: 'pending' | 'succeeded' | 'failed';
 }
 
 export default function AssetsPage() {
@@ -66,30 +67,37 @@ export default function AssetsPage() {
     }
   }, [isDarkMode]);
 
-  // 加载模拟数据（实际应该从 API 获取）
+  // 从 API 加载数据
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      // 模拟加载延迟
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // 模拟数据
-      const mockRecords: GenerationRecord[] = Array.from({ length: 12 }, (_, i) => {
-        const isVideo = i % 4 === 0; // 每4个中有一个视频
-        return {
-          id: `gen-${i + 1}`,
-          image_url: isVideo ? '/placeholder-video.png' : `https://picsum.photos/seed/${Date.now() + i}/512/512`,
-          video_url: isVideo ? `https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4` : undefined,
-          prompt: isVideo ? `AI生成的动画作品 #${i + 1}` : `AI生成的艺术作品 #${i + 1}`,
-          resolution: ['1K', '2K', '4K'][i % 3],
-          ratio: ['1:1', '16:9', '9:16'][i % 3],
-          credits_cost: isVideo ? 10 : [1, 2, 4][i % 3],
-          created_at: new Date(Date.now() - i * 3600000 * 2).toISOString(),
-          type: isVideo ? 'video' : 'image',
-        };
-      });
-      
-      setRecords(mockRecords);
+      try {
+        const response = await fetch('/api/generations?limit=100', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success && data.records) {
+          // 转换数据格式以适配前端
+          const formattedRecords: GenerationRecord[] = data.records.map((record: Record<string, unknown>) => ({
+            id: record.id as string,
+            image_url: (record.result_url as string) || (record.parameters as Record<string, string>)?.url || '',
+            prompt: record.prompt as string,
+            resolution: (record.parameters as Record<string, string>)?.resolution || '',
+            ratio: (record.parameters as Record<string, string>)?.ratio || '',
+            credits_cost: record.credits_used as number,
+            created_at: record.created_at as string,
+            type: record.type as 'image' | 'video',
+          }));
+          setRecords(formattedRecords);
+        } else if (data.error) {
+          console.error('加载失败:', data.error);
+          setRecords([]);
+        }
+      } catch (error) {
+        console.error('获取数据失败:', error);
+        setRecords([]);
+      }
       setLoading(false);
     };
     
@@ -113,9 +121,25 @@ export default function AssetsPage() {
   };
 
   // 删除记录
-  const handleDelete = (id: string) => {
-    setRecords(prev => prev.filter(r => r.id !== id));
-    setSelectedRecord(null);
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/generations/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setRecords(prev => prev.filter(r => r.id !== id));
+        setSelectedRecord(null);
+      } else {
+        console.error('删除失败:', data.error);
+        alert('删除失败: ' + (data.error || '未知错误'));
+      }
+    } catch (error) {
+      console.error('删除失败:', error);
+      alert('删除失败，请重试');
+    }
   };
 
   // 下载文件（支持图片和视频）

@@ -1,19 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { cookies } from 'next/headers';
 
-// 提交需求
-export async function POST(request: NextRequest) {
+function getUserIdFromSession(sessionToken: string): string | null {
   try {
-    const sessionToken = request.cookies.get('session_token')?.value;
+    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
+    const [id, timestamp] = decoded.split(':');
+    const sessionTime = parseInt(timestamp);
+    
+    if (Date.now() - sessionTime > 7 * 24 * 60 * 60 * 1000) {
+      return null;
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
 
-    // 允许未登录用户提交，但记录联系方式
-    let userId = null;
-    if (sessionToken) {
-      const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
-      [userId] = decoded.split(':');
+export async function GET(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session_token')?.value;
+
+    if (!sessionToken) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
-    const { title, description, category, priority, contact } = await request.json();
+    const userId = getUserIdFromSession(sessionToken);
+    if (!userId) {
+      return NextResponse.json({ error: '会话已过期' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+
+    const client = getSupabaseClient();
+    
+    let query = client
+      .from('submissions')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data: records, error, count } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return NextResponse.json({
+      success: true,
+      submissions: records || [],
+      total: count || 0,
+      page,
+      limit
+    });
+  } catch (error) {
+    console.error('获取投稿记录错误:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '服务器错误' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session_token')?.value;
+
+    if (!sessionToken) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    const userId = getUserIdFromSession(sessionToken);
+    if (!userId) {
+      return NextResponse.json({ error: '会话已过期' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, description, category, priority } = body;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -22,20 +95,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!['feature', 'improvement', 'bug', 'other'].includes(category)) {
+      return NextResponse.json(
+        { error: '无效的类型' },
+        { status: 400 }
+      );
+    }
+
+    if (!['low', 'normal', 'high', 'urgent'].includes(priority)) {
+      return NextResponse.json(
+        { error: '无效的优先级' },
+        { status: 400 }
+      );
+    }
+
     const client = getSupabaseClient();
 
-    const { data: submission, error } = await client
+    const { data: record, error } = await client
       .from('submissions')
       .insert({
         user_id: userId,
         title,
         description,
-        category: category || 'other',
-        priority: priority || 'normal',
-        contact: contact || '',
-        status: 'pending',
+        category,
+        priority,
+        status: 'pending'
       })
-      .select('*')
+      .select()
       .single();
 
     if (error) {
@@ -44,67 +130,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      submission,
-      message: '提交成功，感谢您的反馈！',
+      submission: record,
+      message: '投稿成功'
     });
   } catch (error) {
-    console.error('提交需求错误:', error);
+    console.error('创建投稿错误:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '提交失败' },
-      { status: 500 }
-    );
-  }
-}
-
-// 获取我的投稿列表
-export async function GET(request: NextRequest) {
-  try {
-    const sessionToken = request.cookies.get('session_token')?.value;
-
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: '请先登录' },
-        { status: 401 }
-      );
-    }
-
-    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
-    const [userId] = decoded.split(':');
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: '无效的会话' },
-        { status: 401 }
-      );
-    }
-
-    const client = getSupabaseClient();
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
-
-    const { data: submissions, error, count } = await client
-      .from('submissions')
-      .select('id, title, category, priority, status, admin_reply, created_at, replied_at', { count: 'exact' })
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .range((page - 1) * pageSize, page * pageSize - 1);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return NextResponse.json({
-      success: true,
-      submissions: submissions || [],
-      total: count || 0,
-      page,
-      pageSize,
-    });
-  } catch (error) {
-    console.error('获取投稿列表错误:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : '获取失败' },
+      { error: error instanceof Error ? error.message : '服务器错误' },
       { status: 500 }
     );
   }

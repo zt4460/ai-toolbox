@@ -1,26 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { cookies } from 'next/headers';
 
-// 获取单个生成记录
+function getUserIdFromSession(sessionToken: string): string | null {
+  try {
+    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
+    const [id, timestamp] = decoded.split(':');
+    const sessionTime = parseInt(timestamp);
+    
+    if (Date.now() - sessionTime > 7 * 24 * 60 * 60 * 1000) {
+      return null;
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionToken = request.cookies.get('session_token')?.value;
-    const { id } = await params;
-    
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: '请先登录' },
-        { status: 401 }
-      );
-    }
-    
-    // 从 session token 中解析用户ID
-    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
-    const userId = decoded.split(':')[0];
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session_token')?.value;
 
+    if (!sessionToken) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    const userId = getUserIdFromSession(sessionToken);
+    if (!userId) {
+      return NextResponse.json({ error: '会话已过期' }, { status: 401 });
+    }
+
+    const { id } = await params;
     const client = getSupabaseClient();
 
     const { data: record, error } = await client
@@ -28,52 +42,43 @@ export async function GET(
       .select('*')
       .eq('id', id)
       .eq('user_id', userId)
-      .maybeSingle();
+      .single();
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (!record) {
-      return NextResponse.json(
-        { error: '记录不存在' },
-        { status: 404 }
-      );
+    if (error || !record) {
+      return NextResponse.json({ error: '记录不存在' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      record,
+      record
     });
   } catch (error) {
-    console.error('获取生成记录失败:', error);
+    console.error('获取生成记录错误:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '获取失败' },
+      { error: error instanceof Error ? error.message : '服务器错误' },
       { status: 500 }
     );
   }
 }
 
-// 删除生成记录
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionToken = request.cookies.get('session_token')?.value;
-    const { id } = await params;
-    
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: '请先登录' },
-        { status: 401 }
-      );
-    }
-    
-    // 从 session token 中解析用户ID
-    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
-    const userId = decoded.split(':')[0];
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session_token')?.value;
 
+    if (!sessionToken) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    const userId = getUserIdFromSession(sessionToken);
+    if (!userId) {
+      return NextResponse.json({ error: '会话已过期' }, { status: 401 });
+    }
+
+    const { id } = await params;
     const client = getSupabaseClient();
 
     const { error } = await client
@@ -88,12 +93,12 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: '删除成功',
+      message: '删除成功'
     });
   } catch (error) {
-    console.error('删除生成记录失败:', error);
+    console.error('删除生成记录错误:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '删除失败' },
+      { error: error instanceof Error ? error.message : '服务器错误' },
       { status: 500 }
     );
   }
