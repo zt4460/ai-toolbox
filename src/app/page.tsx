@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
@@ -141,15 +141,15 @@ export default function HomePage() {
   const [fashionModelImage, setFashionModelImage] = useState<string | null>(null);
   const [fashionModelRef, setFashionModelRef] = useState<string | null>(null);
 
-  // 模拟积分余额
-  const credits = user?.credits ?? 200;
+  // 模拟积分余额 - 使用 useMemo 避免重复计算
+  const credits = useMemo(() => user?.credits ?? 200, [user?.credits]);
 
-  // 计算消耗积分
-  const calculateCost = () => {
+  // 计算消耗积分 - 使用 useMemo 缓存结果
+  const cost = useMemo(() => {
     const resolutionCost = CREDIT_CONFIG.resolutionMultipliers[selectedResolution.id as keyof typeof CREDIT_CONFIG.resolutionMultipliers] || 1;
     const ratioCost = CREDIT_CONFIG.ratioMultipliers[selectedRatio.id as keyof typeof CREDIT_CONFIG.ratioMultipliers] || 1;
     return Math.round(CREDIT_CONFIG.baseCost * resolutionCost * ratioCost * imageCount);
-  };
+  }, [selectedResolution.id, selectedRatio.id, imageCount]);
 
   // 切换深色/浅色模式
   useEffect(() => {
@@ -160,8 +160,8 @@ export default function HomePage() {
     }
   }, [isDarkMode]);
 
-  // 生成图片
-  const handleGenerate = async () => {
+  // 生成图片 - 使用 useCallback 避免重复创建
+  const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
     
     setIsCreating(true);
@@ -177,17 +177,17 @@ export default function HomePage() {
       setGeneratedImages(prev => [...newImages, ...prev]);
       setIsCreating(false);
     }, 2000);
-  };
+  }, [prompt, imageCount]);
 
-  // 复制提示词
-  const handleCopy = async (text: string, id: string) => {
+  // 复制提示词 - 使用 useCallback
+  const handleCopy = useCallback(async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
+  }, []);
 
-  // 处理电商灵感
-  const handleInspiration = () => {
+  // 处理电商灵感 - 使用 useCallback
+  const handleInspiration = useCallback(() => {
     const typeNames = IMAGE_TYPES
       .filter(t => ecomImageTypes.includes(t.id))
       .map(t => t.name)
@@ -196,19 +196,19 @@ export default function HomePage() {
     const inspiration = `${ecomPlatform.name}电商${typeNames}，${ecomLanguage.name}文案风格`;
     setPrompt(inspiration);
     setShowInspiration(false);
-  };
+  }, [ecomImageTypes, ecomPlatform, ecomLanguage]);
 
-  // 切换图片功能选择
-  const toggleImageType = (id: string) => {
+  // 切换图片功能选择 - 使用 useCallback
+  const toggleImageType = useCallback((id: string) => {
     setEcomImageTypes(prev => 
       prev.includes(id) 
         ? prev.filter(t => t !== id)
         : [...prev, id]
     );
-  };
+  }, []);
 
-  // 处理图片上传预览
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string | null) => void) => {
+  // 处理图片上传预览 - 使用 useCallback
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, setter: (url: string | null) => void) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -217,7 +217,7 @@ export default function HomePage() {
       };
       reader.readAsDataURL(file);
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-gray-900 flex">
@@ -479,7 +479,7 @@ export default function HomePage() {
               <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <Coins className="w-5 h-5 text-pink-500" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  本次消耗 <span className="font-semibold text-gray-900 dark:text-white">{calculateCost()}</span> 积分
+                  本次消耗 <span className="font-semibold text-gray-900 dark:text-white">{cost}</span> 积分
                 </span>
                 <span className="text-xs text-gray-400">|</span>
                 <span className="text-sm text-gray-500 dark:text-gray-400">剩余 {credits} 积分</span>
