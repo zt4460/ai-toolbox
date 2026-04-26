@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // standalone模式用于Tauri桌面应用
+  output: 'standalone',
 };
 
 export default nextConfig;
