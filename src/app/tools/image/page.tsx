@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft,
   Wand2,
@@ -17,13 +18,16 @@ import {
   MessageSquare,
   Mail,
   X,
-  Send
+  Send,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
+import { useAuth } from '@/app/providers';
 
 // 创建共享的顶部工具栏组件
 function TopBar({ 
   title, 
-  credits = 200,
+  credits = 0,
   showContact = true
 }: { 
   title: string; 
@@ -100,17 +104,41 @@ function TopBar({
 }
 
 export default function ImageToolPage() {
+  const router = useRouter();
+  const { user, refreshUser } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [resolution, setResolution] = useState('2K');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [insufficientCredits, setInsufficientCredits] = useState(false);
+
+  // 积分不足时跳转到充值页面
+  const handleRecharge = () => {
+    router.push('/profile?tab=recharge');
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     
+    // 检查是否已登录
+    if (!user) {
+      router.push('/auth');
+      return;
+    }
+    
+    // 检查积分
+    const cost = resolution === '4K' ? 8 : 4;
+    if (user.credits < cost) {
+      setInsufficientCredits(true);
+      return;
+    }
+    
     setIsGenerating(true);
     setError(null);
+    setSuccessMessage(null);
+    setInsufficientCredits(false);
     setGeneratedImages([]);
     
     try {
@@ -124,6 +152,9 @@ export default function ImageToolPage() {
       
       if (data.success && data.imageUrls) {
         setGeneratedImages(data.imageUrls);
+        setSuccessMessage(`图片生成成功！消耗 ${cost} 积分`);
+        // 刷新用户积分
+        await refreshUser();
       } else {
         setError(data.error || '生成失败，请重试');
       }
@@ -138,14 +169,51 @@ export default function ImageToolPage() {
     setPrompt('');
     setGeneratedImages([]);
     setError(null);
+    setSuccessMessage(null);
+    setInsufficientCredits(false);
   };
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
-      <TopBar title="图片生成" />
+      <TopBar title="图片生成" credits={user?.credits} />
       
       <main className="flex-1 overflow-auto pb-24">
         <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* 成功提示 */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              <span className="text-green-700">{successMessage}</span>
+              <button 
+                onClick={() => setSuccessMessage(null)}
+                className="ml-auto text-green-400 hover:text-green-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* 积分不足提示 */}
+          {insufficientCredits && (
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-orange-500" />
+              <div className="flex-1">
+                <span className="text-orange-700">积分不足，当前积分：{user?.credits || 0}</span>
+              </div>
+              <button 
+                onClick={handleRecharge}
+                className="px-4 py-1.5 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+              >
+                立即充值
+              </button>
+              <button 
+                onClick={() => setInsufficientCredits(false)}
+                className="text-orange-400 hover:text-orange-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           {/* 类型切换 */}
           <div className="flex items-center gap-2 mb-6">
             <div className="flex bg-white border border-gray-200 rounded-lg p-0.5">
@@ -281,12 +349,16 @@ export default function ImageToolPage() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                 <Coins className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-gray-700">200 积分</span>
+                <span className="text-sm text-gray-700">{user?.credits || 0} 积分</span>
               </div>
-              <span className="text-xs text-red-500">本次消耗 10 积分</span>
+              <span className="text-xs text-red-500">本次消耗 {resolution === '4K' ? 8 : 4} 积分</span>
             </div>
-            <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
-              立即创作
+            <button 
+              onClick={handleGenerate}
+              disabled={!prompt.trim() || isGenerating}
+              className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? '生成中...' : '立即创作'}
             </button>
           </div>
         </div>
