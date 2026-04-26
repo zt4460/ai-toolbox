@@ -270,14 +270,14 @@ export default function HomePage() {
         {/* 顶部导航 */}
         <div className="flex flex-col gap-3">
           <button
-            className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:bg-gray-200 dark:hover:bg-gray-600"
+            className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
             title="创作"
           >
             <Wand2 className="w-6 h-6" />
           </button>
           <Link
             href="/assets"
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
             title="资产"
           >
             <FolderOpen className="w-6 h-6" />
@@ -289,8 +289,8 @@ export default function HomePage() {
           {/* 积分显示 */}
           <button 
             onClick={() => setShowCredits(true)}
-            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-            title="积分余额"
+            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+            aria-label="积分余额"
           >
             <Coins className="w-6 h-6" />
             <span className="text-[9px] mt-0.5">{credits}</span>
@@ -299,8 +299,8 @@ export default function HomePage() {
           {/* 主题切换 */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-            title={isDarkMode ? '浅色模式' : '深色模式'}
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+            aria-label={isDarkMode ? '切换到浅色模式' : '切换到深色模式'}
           >
             {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
           </button>
@@ -324,7 +324,7 @@ export default function HomePage() {
                 placeholder="搜索创作记录..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-72 h-11 pl-11 pr-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:border-gray-300 dark:focus:border-gray-500 transition-colors text-gray-900 dark:text-white placeholder-gray-400"
+                className="w-72 h-11 pl-11 pr-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:border-gray-300 dark:focus:border-gray-500 transition-colors duration-200 text-gray-900 dark:text-white placeholder-gray-400"
               />
             </div>
             

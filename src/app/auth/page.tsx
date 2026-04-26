@@ -200,6 +200,7 @@ export default function AuthPage() {
                       placeholder="用户名 / 邮箱 / 手机号"
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
+                      autoComplete="username"
                       required
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
@@ -215,6 +216,7 @@ export default function AuthPage() {
                       placeholder="输入密码"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
+                      autoComplete="current-password"
                       required
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
@@ -257,6 +259,7 @@ export default function AuthPage() {
                       placeholder="用户名 / 邮箱 / 手机号"
                       value={regIdentifier}
                       onChange={(e) => setRegIdentifier(e.target.value)}
+                      autoComplete="username"
                       required
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
@@ -326,6 +329,7 @@ export default function AuthPage() {
                       placeholder="至少6位密码"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
+                      autoComplete="new-password"
                       required
                       minLength={6}
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
@@ -343,6 +347,7 @@ export default function AuthPage() {
                       placeholder="再次输入密码"
                       value={regConfirmPassword}
                       onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
                       required
                       minLength={6}
                       className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
