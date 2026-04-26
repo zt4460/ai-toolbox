@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { 
   Wand2,
@@ -12,8 +12,6 @@ import {
   Upload,
   X,
   Send,
-  Mail,
-  Image as ImageIcon,
   Coins,
   Sun,
   Moon,
@@ -25,7 +23,8 @@ import {
   Maximize,
   Grid2X2,
   User,
-  MessageSquare
+  Globe,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from './providers';
 
@@ -45,9 +44,9 @@ const CREDIT_CONFIG = {
   },
 };
 
-// 模型配置
+// 大模型配置
 const MODELS = [
-  { id: 'fast', name: '极速模式', description: '快速生成，适合简单场景' },
+  { id: 'std', name: '标准版', description: '稳定生成，适合日常场景' },
   { id: 'pro', name: '专业版', description: '高质量生成，适合复杂场景' },
   { id: 'hd', name: '高清版', description: '最高质量，适合精细需求' },
 ];
@@ -67,14 +66,49 @@ const RATIOS = [
   { id: '4:3', name: '4:3', icon: Grid2X2 },
 ];
 
+// 电商灵感配置
+const LANGUAGES = [
+  { id: 'zh', name: '中文' },
+  { id: 'en', name: '英文' },
+  { id: 'ja', name: '日文' },
+  { id: 'ko', name: '韩文' },
+];
+
+const COUNTRIES = [
+  { id: 'cn', name: '中国' },
+  { id: 'us', name: '美国' },
+  { id: 'jp', name: '日本' },
+  { id: 'kr', name: '韩国' },
+  { id: 'eu', name: '欧洲' },
+];
+
+const PLATFORMS = [
+  { id: 'taobao', name: '淘宝' },
+  { id: 'jd', name: '京东' },
+  { id: 'pdd', name: '拼多多' },
+  { id: 'tmall', name: '天猫' },
+  { id: 'amazon', name: '亚马逊' },
+  { id: 'shopify', name: 'Shopify' },
+];
+
+const IMAGE_TYPES = [
+  { id: 'main', name: '主图' },
+  { id: 'detail', name: '材质细节图' },
+  { id: 'scene', name: '使用场景图' },
+  { id: 'feature', name: '卖点展示图' },
+  { id: 'model', name: '模特展示图' },
+  { id: 'package', name: '包装展示图' },
+];
+
 export default function HomePage() {
   const { user } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showContact, setShowContact] = useState(false);
-  const [showModelSelect, setShowModelSelect] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
+  const [showModelSelect, setShowModelSelect] = useState(false);
+  const [showInspiration, setShowInspiration] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   // 创作设置状态
   const [prompt, setPrompt] = useState('');
@@ -84,8 +118,14 @@ export default function HomePage() {
   const [selectedRatio, setSelectedRatio] = useState(RATIOS[0]);
   const [imageCount, setImageCount] = useState(1);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const [generatedImages, setGeneratedImages] = useState<Array<{id: string; url: string; prompt: string}>>([]);
+  const [generatedImages, setGeneratedImages] = useState<Array<{id: string; url: string; prompt: string; time: string}>>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // 电商灵感设置
+  const [inspirationLanguage, setInspirationLanguage] = useState(LANGUAGES[0]);
+  const [inspirationCountry, setInspirationCountry] = useState(COUNTRIES[0]);
+  const [inspirationPlatform, setInspirationPlatform] = useState(PLATFORMS[0]);
+  const [inspirationImageTypes, setInspirationImageTypes] = useState<string[]>(['main']);
 
   // 模拟积分余额
   const credits = user?.credits ?? 200;
@@ -118,6 +158,7 @@ export default function HomePage() {
         id: `img-${Date.now()}-${i}`,
         url: `https://picsum.photos/seed/${Date.now() + i}/512/512`,
         prompt: prompt,
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
       }));
       setGeneratedImages(prev => [...newImages, ...prev]);
       setIsCreating(false);
@@ -131,10 +172,31 @@ export default function HomePage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // 处理电商灵感
+  const handleInspiration = () => {
+    const typeNames = IMAGE_TYPES
+      .filter(t => inspirationImageTypes.includes(t.id))
+      .map(t => t.name)
+      .join('、');
+    
+    const inspiration = `${inspirationPlatform.name}电商${typeNames}，${inspirationCountry.name}市场，${inspirationLanguage.name}文案风格`;
+    setPrompt(inspiration);
+    setShowInspiration(false);
+  };
+
+  // 切换图片类型选择
+  const toggleImageType = (id: string) => {
+    setInspirationImageTypes(prev => 
+      prev.includes(id) 
+        ? prev.filter(t => t !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-gray-900 flex">
-      {/* 左侧极窄侧边栏 */}
-      <aside className="w-12 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-4">
+      {/* 左侧极窄侧边栏 - 固定不动 */}
+      <aside className="w-12 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 shrink-0">
         {/* 顶部导航 */}
         <div className="flex flex-col gap-2">
           <button
@@ -180,9 +242,9 @@ export default function HomePage() {
       </aside>
 
       {/* 主内容区 */}
-      <main className="flex-1 flex flex-col">
-        {/* 顶部工具栏 */}
-        <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 flex items-center justify-between">
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* 顶部工具栏 - 固定不动 */}
+        <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">让AI变成好用的牛马</h1>
           </div>
@@ -215,19 +277,14 @@ export default function HomePage() {
                 <Grid3X3 className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
-
-            {/* 联系我 */}
-            <button
-              onClick={() => setShowContact(true)}
-              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <Mail className="w-5 h-5" />
-            </button>
           </div>
         </header>
 
-        {/* 内容区域 */}
-        <div className="flex-1 overflow-auto pb-72">
+        {/* 内容区域 - 可滚动 */}
+        <div 
+          ref={contentRef}
+          className="flex-1 overflow-y-auto pb-72"
+        >
           <div className="max-w-4xl mx-auto px-6 py-8">
             {generatedImages.length === 0 ? (
               /* 空白状态 */
@@ -250,8 +307,9 @@ export default function HomePage() {
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{img.prompt}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs rounded-full">2K</span>
-                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">1:1</span>
+                          <span className="px-2 py-0.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs rounded-full">{selectedResolution.name}</span>
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">{selectedRatio.id}</span>
+                          <span className="text-xs text-gray-400">{img.time}</span>
                         </div>
                         <button 
                           onClick={() => handleCopy(img.prompt, img.id)}
@@ -269,8 +327,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 底部悬浮创作面板 */}
-        <div className="fixed bottom-6 left-14 right-6 max-w-4xl mx-auto">
+        {/* 底部悬浮创作面板 - 固定在底部 */}
+        <div className="fixed bottom-6 left-[72px] right-6 max-w-4xl">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
             {/* 功能设置行 */}
             <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -282,7 +340,7 @@ export default function HomePage() {
                 </span>
               </button>
 
-              {/* 模型选择 */}
+              {/* 大模型选择 */}
               <div className="relative">
                 <button 
                   onClick={() => setShowModelSelect(!showModelSelect)}
@@ -292,7 +350,7 @@ export default function HomePage() {
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
                 {showModelSelect && (
-                  <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden z-10 min-w-48">
+                  <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden z-20 min-w-48">
                     {MODELS.map((model) => (
                       <button
                         key={model.id}
@@ -385,10 +443,13 @@ export default function HomePage() {
             {/* 底部功能栏 */}
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-3">
-                {/* AI灵感 */}
-                <button className="px-3 py-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-pink-100 dark:hover:bg-pink-900/50 transition-colors">
+                {/* 电商AI灵感 */}
+                <button 
+                  onClick={() => setShowInspiration(true)}
+                  className="px-3 py-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-pink-100 dark:hover:bg-pink-900/50 transition-colors"
+                >
                   <Sparkles className="w-4 h-4" />
-                  AI灵感
+                  电商AI灵感
                 </button>
               </div>
               
@@ -438,35 +499,136 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 联系我弹窗 */}
-      {showContact && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowContact(false)}>
+      {/* 电商AI灵感弹窗 */}
+      {showInspiration && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowInspiration(false)}>
           <div 
             className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-80 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">联系我们</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-pink-500" />
+                电商AI灵感
+              </h3>
               <button 
-                onClick={() => setShowContact(false)}
+                onClick={() => setShowInspiration(false)}
                 className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-3">
-              <a 
-                href="mailto:contact@example.com"
-                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                <Mail className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <span className="text-gray-700 dark:text-gray-300">contact@example.com</span>
-              </a>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <MessageSquare className="w-5 h-5 text-green-500" />
-                <span className="text-gray-700 dark:text-gray-300">微信: AI_Tools</span>
+            
+            <div className="space-y-4">
+              {/* 语言选择 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                  <Globe className="w-4 h-4" />
+                  语言
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.id}
+                      onClick={() => setInspirationLanguage(lang)}
+                      className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                        inspirationLanguage.id === lang.id
+                          ? 'bg-pink-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 国家选择 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  国家
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {COUNTRIES.map((country) => (
+                    <button
+                      key={country.id}
+                      onClick={() => setInspirationCountry(country)}
+                      className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                        inspirationCountry.id === country.id
+                          ? 'bg-pink-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {country.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 平台选择 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  平台
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PLATFORMS.map((platform) => (
+                    <button
+                      key={platform.id}
+                      onClick={() => setInspirationPlatform(platform)}
+                      className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                        inspirationPlatform.id === platform.id
+                          ? 'bg-pink-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {platform.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 图片功能选择 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                  <ImageIcon className="w-4 h-4" />
+                  图片功能
+                </label>
+                <div className="space-y-2">
+                  {IMAGE_TYPES.map((type) => (
+                    <label
+                      key={type.id}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                        inspirationImageTypes.includes(type.id)
+                          ? 'bg-pink-50 dark:bg-pink-900/30'
+                          : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={inspirationImageTypes.includes(type.id)}
+                        onChange={() => toggleImageType(type.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500"
+                      />
+                      <span className={`text-sm ${
+                        inspirationImageTypes.includes(type.id)
+                          ? 'text-pink-600 dark:text-pink-400'
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}>
+                        {type.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
+
+            <button
+              onClick={handleInspiration}
+              disabled={inspirationImageTypes.length === 0}
+              className="w-full mt-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              生成灵感
+            </button>
           </div>
         </div>
       )}
