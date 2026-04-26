@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { getSessionUser } from '@/app/utils/auth';
 
-// 获取或删除单个生成记录
+// 获取单个生成记录
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getSessionUser();
+    const sessionToken = request.cookies.get('session_token')?.value;
     const { id } = await params;
     
-    if (!user) {
+    if (!sessionToken) {
       return NextResponse.json(
         { error: '请先登录' },
         { status: 401 }
       );
     }
+    
+    // 从 session token 中解析用户ID
+    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
+    const userId = decoded.split(':')[0];
 
     const client = getSupabaseClient();
 
@@ -24,7 +27,7 @@ export async function GET(
       .from('generations')
       .select('*')
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle();
 
     if (error) {
@@ -57,15 +60,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getSessionUser();
+    const sessionToken = request.cookies.get('session_token')?.value;
     const { id } = await params;
     
-    if (!user) {
+    if (!sessionToken) {
       return NextResponse.json(
         { error: '请先登录' },
         { status: 401 }
       );
     }
+    
+    // 从 session token 中解析用户ID
+    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
+    const userId = decoded.split(':')[0];
 
     const client = getSupabaseClient();
 
@@ -73,7 +80,7 @@ export async function DELETE(
       .from('generations')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (error) {
       throw new Error(error.message);

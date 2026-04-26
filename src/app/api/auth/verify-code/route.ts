@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/storage/database/supabase-client';
+import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 // 验证码验证
 export async function POST(request: NextRequest) {
