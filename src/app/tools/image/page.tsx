@@ -3,228 +3,294 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, ImageIcon, Sparkles, Loader2, Download, Copy, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  ArrowLeft,
+  Wand2,
+  Sparkles,
+  Download,
+  Copy,
+  RotateCcw,
+  ChevronDown,
+  Image as ImageIcon,
+  Coins,
+  Settings,
+  MessageSquare,
+  Mail,
+  X,
+  Send
+} from 'lucide-react';
 
-const SAMPLE_PROMPTS = [
-  '日出时分的金色海滩，浪花轻拍礁石',
-  '未来城市夜景，霓虹灯光倒映在雨中',
-  '森林深处的魔法小屋，萤火虫环绕',
-  '极简风格的产品设计工作站',
-];
+// 创建共享的顶部工具栏组件
+function TopBar({ 
+  title, 
+  credits = 200,
+  showContact = true
+}: { 
+  title: string; 
+  credits?: number;
+  showContact?: boolean;
+}) {
+  const [showContactModal, setShowContactModal] = useState(false);
 
-export default function ImageGenerationPage() {
+  return (
+    <>
+      <header className="h-14 bg-white border-b border-gray-200 px-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/"
+            className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {credits !== undefined && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+              <Coins className="w-4 h-4 text-blue-500" />
+              <span className="text-sm text-gray-700">{credits} 积分</span>
+            </div>
+          )}
+          
+          {showContact && (
+            <button 
+              onClick={() => setShowContactModal(true)}
+              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Mail className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </header>
+
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowContactModal(false)}>
+          <div 
+            className="bg-white rounded-2xl p-6 w-80 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">联系我们</h3>
+              <button 
+                onClick={() => setShowContactModal(false)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <a 
+                href="mailto:contact@example.com"
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <Mail className="w-5 h-5 text-gray-500" />
+                <span className="text-gray-700">contact@example.com</span>
+              </a>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <MessageSquare className="w-5 h-5 text-green-500" />
+                <span className="text-gray-700">微信: AI_Tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function ImageToolPage() {
   const [prompt, setPrompt] = useState('');
-  const [size, setSize] = useState('1:1');
-  const [quantity, setQuantity] = useState('1');
+  const [resolution, setResolution] = useState('2K');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('请输入图片描述');
-      return;
-    }
-
+    if (!prompt.trim()) return;
+    
     setIsGenerating(true);
-    setError('');
+    setError(null);
     setGeneratedImages([]);
-
+    
     try {
       const response = await fetch('/api/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, size }),
+        body: JSON.stringify({ prompt, size: resolution }),
       });
-
+      
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '生成失败');
+      
+      if (data.success && data.imageUrls) {
+        setGeneratedImages(data.imageUrls);
+      } else {
+        setError(data.error || '生成失败，请重试');
       }
-
-      // 模拟生成结果（使用示例图片）
-      const sampleImages = [
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
-        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800',
-      ];
-      setGeneratedImages(sampleImages);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成失败，请重试');
+    } catch {
+      setError('网络错误，请检查连接后重试');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleDownload = async (url: string, index: number) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `generated-image-${index + 1}.png`;
-      link.click();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('下载失败:', err);
-    }
-  };
-
-  const handleSampleClick = (sample: string) => {
-    setPrompt(sample);
-  };
-
   const handleReset = () => {
     setPrompt('');
     setGeneratedImages([]);
-    setError('');
+    setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
-        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-            <ImageIcon className="w-4 h-4 text-violet-600" />
-          </div>
-          <span className="font-semibold text-gray-900">图片生成</span>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI 图片生成</h1>
-          <p className="text-gray-500">输入描述，让 AI 为你创作精美图片</p>
-        </div>
-
-        {/* Input Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-          <Label htmlFor="prompt" className="text-gray-700 mb-3 block">
-            图片描述
-          </Label>
-          <textarea
-            id="prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="描述你想要生成的图片..."
-            className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 resize-none outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100 transition-all"
-          />
-
-          {/* 示例提示 */}
-          <div className="mt-3">
-            <p className="text-xs text-gray-400 mb-2">试试这些描述：</p>
-            <div className="flex flex-wrap gap-2">
-              {SAMPLE_PROMPTS.map((sample, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSampleClick(sample)}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-700 text-gray-600 rounded-lg transition-colors"
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+      <TopBar title="图片生成" />
+      
+      <main className="flex-1 overflow-auto pb-24">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* 类型切换 */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="flex bg-white border border-gray-200 rounded-lg p-0.5">
+              {['image', 'video', 'digital-human', 'lip-sync'].map((type, index) => (
+                <Link
+                  key={type}
+                  href={index === 0 ? '/tools/image' : index === 1 ? '/tools/video' : index === 2 ? '/tools/digital-human' : '/tools/lip-sync'}
+                  className={`px-4 py-1.5 text-sm rounded-md transition-all flex items-center gap-1.5 ${
+                    type === 'image' 
+                      ? 'bg-gray-900 text-white' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  {sample}
-                </button>
+                  {type === 'image' && <ImageIcon className="w-4 h-4" />}
+                  {type === 'video' && <Wand2 className="w-4 h-4" />}
+                  {type === 'digital-human' && <MessageSquare className="w-4 h-4" />}
+                  {type === 'lip-sync' && <Sparkles className="w-4 h-4" />}
+                  {type === 'image' ? '图片' : type === 'video' ? '视频' : type === 'digital-human' ? '数字人' : '配音'}
+                </Link>
               ))}
             </div>
           </div>
 
-          {/* Options */}
-          <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-100">
-            <div className="flex items-center gap-4">
+          {/* 创作面板 */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            {/* 参数设置 */}
+            <div className="flex items-center gap-4 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">尺寸</span>
-                <select 
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  className="text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-1.5 outline-none cursor-pointer"
-                >
-                  <option value="1:1">1:1 方形</option>
-                  <option value="16:9">16:9 横版</option>
-                  <option value="9:16">9:16 竖版</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">数量</span>
-                <select 
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  className="text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-1.5 outline-none cursor-pointer"
-                >
-                  <option value="1">1 张</option>
-                  <option value="2">2 张</option>
-                  <option value="4">4 张</option>
-                </select>
+                <span className="text-sm text-gray-600">分辨率</span>
+                <div className="relative">
+                  <select
+                    value={resolution}
+                    onChange={(e) => setResolution(e.target.value)}
+                    className="h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-300"
+                  >
+                    <option value="2K">2K (2048x2048)</option>
+                    <option value="4K">4K (4096x4096)</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             </div>
-            <button
-              onClick={handleReset}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-400"
-            >
-              <RotateCcw className="w-4 h-4" />
+
+            {/* 输入区域 */}
+            <div className="relative mb-4">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="描述你想要创作的内容，例如：一只橘色的猫咪在阳光下打盹，古风插画风格..."
+                className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-gray-300 transition-colors"
+              />
+              <button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || isGenerating}
+                className="absolute bottom-4 right-4 w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            {/* AI灵感 */}
+            <div className="flex items-center justify-between">
+              <button className="px-3 py-1.5 bg-pink-50 text-pink-600 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-pink-100 transition-colors">
+                <Sparkles className="w-4 h-4" />
+                AI灵感
+              </button>
+              
+              <button
+                onClick={handleReset}
+                className="px-3 py-1.5 text-gray-500 rounded-lg text-sm flex items-center gap-1.5 hover:bg-gray-100 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                重置
+              </button>
+            </div>
+          </div>
+
+          {/* 错误提示 */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* 生成结果 */}
+          {generatedImages.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">生成结果</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {generatedImages.map((url, index) => (
+                  <div key={index} className="relative bg-white rounded-xl border border-gray-200 overflow-hidden group">
+                    <Image
+                      src={url}
+                      alt={`Generated image ${index + 1}`}
+                      width={512}
+                      height={512}
+                      className="w-full aspect-square object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-700 hover:bg-gray-100 transition-colors">
+                        <Download className="w-5 h-5" />
+                      </button>
+                      <button className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-gray-700 hover:bg-gray-100 transition-colors">
+                        <Copy className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 提示信息 */}
+          {generatedImages.length === 0 && !isGenerating && (
+            <div className="mt-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                <ImageIcon className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500">输入描述词，点击发送开始创作</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* 底部悬浮操作栏 */}
+      <div className="fixed bottom-6 left-14 right-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                <Coins className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-gray-700">200 积分</span>
+              </div>
+              <span className="text-xs text-red-500">本次消耗 10 积分</span>
+            </div>
+            <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+              立即创作
             </button>
           </div>
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={!prompt.trim() || isGenerating}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              生成中...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              开始生成
-            </>
-          )}
-        </button>
-
-        {/* Results */}
-        {generatedImages.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-sm font-medium text-gray-500 mb-4">生成结果</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {generatedImages.map((url, idx) => (
-                <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 group">
-                  <Image src={url} alt={`生成图片 ${idx + 1}`} fill className="object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                  <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleDownload(url, idx)}
-                      className="p-2.5 bg-white rounded-xl hover:bg-gray-100 shadow-lg transition-colors"
-                    >
-                      <Download className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button className="p-2.5 bg-white rounded-xl hover:bg-gray-100 shadow-lg transition-colors">
-                      <Copy className="w-4 h-4 text-gray-700" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
+      </div>
     </div>
   );
 }

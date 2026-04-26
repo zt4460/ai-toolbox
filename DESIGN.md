@@ -1,7 +1,7 @@
 ---
 title: AI 工具箱 - Design System
 description: 让AI变成好用的牛马 - 极简现代 AI 创作工具箱
-version: 2.0.0
+version: 3.0.0
 
 # Color Palette
 
@@ -11,9 +11,9 @@ primary-light: "#374151"               # Gray 700 - Secondary emphasis
 primary-foreground: "#ffffff"           # White text on dark
 
 ## Background Colors
-background: "#f9fafb"                  # Gray 50 - Page background
+background: "#F8F9FA"                  # Light gray background
 background-card: "#ffffff"             # White - Card surfaces
-background-input: "#f3f4f6"            # Gray 100 - Input fields
+background-input: "#f9fafb"           # Gray 50 - Input fields
 background-hover: "#f3f4f6"            # Gray 100 - Hover state
 
 ## Text Colors
@@ -25,27 +25,21 @@ text-placeholder: "#d1d5db"            # Gray 300 - Placeholder
 ## Border Colors
 border: "#e5e7eb"                      # Gray 200 - Default border
 border-hover: "#d1d5db"               # Gray 300 - Hover border
-border-focus: "#9ca3af"                # Gray 400 - Focus border
 
-## Tool Accent Colors
-accent-image: "#8b5cf6"                # Violet 500 - Image generation
-accent-image-bg: "#f3e8ff"             # Violet 100 - Image badge bg
-accent-video: "#ec4899"                # Pink 500 - Video generation
-accent-video-bg: "#fce7f3"             # Pink 100 - Video badge bg
-accent-digital: "#06b6d4"              # Cyan 500 - Digital human
-accent-digital-bg: "#cffafe"          # Cyan 100 - Digital badge bg
-accent-lipsync: "#f59e0b"              # Amber 500 - Lip sync
-accent-lipsync-bg: "#fef3c7"           # Amber 100 - Lip sync badge bg
+## Accent Colors
+accent-gradient: "linear-gradient(135deg, #ec4899, #8b5cf6)"  # Pink to Purple gradient
+accent-pink: "#ec4899"                # Pink 500 - Primary action
+accent-pink-bg: "#fdf2f8"              # Pink 50 - Pink tint
+accent-purple: "#8b5cf6"               # Purple 500 - Secondary action
+accent-purple-bg: "#f5f3ff"            # Purple 50 - Purple tint
+accent-blue: "#3b82f6"                 # Blue 500 - Credits/Info
+accent-green: "#10b981"                # Green 500 - Success
 
 ## Status Colors
-success: "#10b981"                    # Emerald 500
-success-bg: "#d1fae5"                  # Emerald 100
-warning: "#f59e0b"                    # Amber 500
-warning-bg: "#fef3c7"                  # Amber 100
-error: "#ef4444"                       # Red 500
-error-bg: "#fee2e2"                    # Red 100
-info: "#3b82f6"                       # Blue 500
-info-bg: "#dbeafe"                     # Blue 100
+error: "#ef4444"                       # Red 500 - Error
+error-bg: "#fef2f2"                    # Red 50 - Error background
+warning: "#f59e0b"                    # Amber 500 - Warning
+info: "#3b82f6"                       # Blue 500 - Info
 
 # Typography
 
@@ -53,20 +47,18 @@ info-bg: "#dbeafe"                     # Blue 100
 font-sans: "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
 
 ## Font Sizes
-text-xs: "0.75rem"                     # 12px - Muted labels
-text-sm: "0.875rem"                    # 14px - Secondary text
-text-base: "1rem"                      # 16px - Body text
+text-xs: "0.75rem"                     # 12px - Labels, timestamps
+text-sm: "0.875rem"                    # 14px - Body text, buttons
+text-base: "1rem"                      # 16px - Default
 text-lg: "1.125rem"                    # 18px - Subheadings
 text-xl: "1.25rem"                     # 20px - Section titles
 text-2xl: "1.5rem"                     # 24px - Page titles
-text-3xl: "1.875rem"                   # 30px - Hero titles
-text-4xl: "2.25rem"                    # 36px - Large displays
 
 ## Font Weights
 font-normal: "400"                     # Normal
-font-medium: "500"                     # Medium emphasis
+font-medium: "500"                     # Medium
 font-semibold: "600"                   # Semibold - Headings
-font-bold: "700"                       # Bold - Strong emphasis
+font-bold: "700"                       # Bold
 
 # Spacing System
 
@@ -74,7 +66,6 @@ font-bold: "700"                       # Bold - Strong emphasis
 base-unit: "4px"                      # 4px grid system
 
 ## Spacing Scale
-space-0: "0"                           # 0px
 space-1: "4px"                         # 4px
 space-2: "8px"                         # 8px
 space-3: "12px"                        # 12px
@@ -82,34 +73,29 @@ space-4: "16px"                        # 16px
 space-5: "20px"                        # 20px
 space-6: "24px"                        # 24px
 space-8: "32px"                        # 32px
-space-10: "40px"                       # 40px
-space-12: "48px"                       # 48px
 
 ## Component Spacing
-header-height: "56px"                 # 14 * 4px - Header height
-sidebar-width: "280px"                 # Sidebar width
-max-width-content: "1024px"            # 1024px - Main content max width
-max-width-narrow: "640px"              # 640px - Narrow content max width
-page-padding: "16px"                    # Page horizontal padding
+header-height: "56px"                  # Header height
+sidebar-width: "48px"                   # Narrow sidebar width
+sidebar-expanded: "280px"             # Expanded sidebar width
+main-padding-x: "24px"                 # Main content horizontal padding
+main-padding-y: "32px"                 # Main content vertical padding
 
 # Border Radius
 
 ## Radius Scale
-radius-none: "0"                       # No radius
 radius-sm: "6px"                       # 6px - Small elements
-radius-md: "8px"                       # 8px - Buttons
+radius-md: "8px"                       # 8px - Buttons, inputs
 radius-lg: "12px"                      # 12px - Cards
-radius-xl: "16px"                      # 16px - Large cards
+radius-xl: "16px"                      # 16px - Large cards, panels
 radius-2xl: "20px"                     # 20px - Modals
-radius-full: "9999px"                  # Full circle
+radius-full: "9999px"                  # Full circle/rounded pill
 
 # Shadows
 
-shadow-sm: "0 1px 2px rgba(0,0,0,0.05)"           # Subtle shadow
-shadow-md: "0 4px 6px rgba(0,0,0,0.07)"           # Medium shadow
-shadow-lg: "0 10px 15px rgba(0,0,0,0.1)"          # Large shadow
-shadow-xl: "0 20px 25px rgba(0,0,0,0.1)"          # Extra large
-shadow-none: "none"                                # No shadow
+shadow-sm: "0 1px 2px rgba(0,0,0,0.05)"           # Subtle
+shadow-md: "0 4px 6px rgba(0,0,0,0.07)"           # Medium - Cards
+shadow-lg: "0 10px 15px rgba(0,0,0,0.1)"          # Large - Floating panels
 
 # Transitions
 
@@ -124,157 +110,191 @@ ease-default: "cubic-bezier(0.4, 0, 0.2, 1)"
 
 ## Overview
 
-采用极简现代的轻量工具风格，参考 Stitch 平台的设计语言。整体视觉呈现简洁、专业、轻量化的特点，强调功能性和高效率。
+采用极简现代的轻量工具风格（参考 Stitch/Coze 平台）。整体视觉呈现简洁、专业、轻量化的特点，强调功能性和高效率。采用极窄侧边栏 + 悬浮底部操作面板的布局。
 
 ## Design Principles
 
-### 1. Minimalism & Clarity
-- **留白充足**: 所有区域预留大量空白，呼吸感强
+### 1. Minimal & Efficient
+- **极窄侧边栏**: 48px 宽，纯图标导航，最大化主内容区
+- **充足留白**: 主内容区大量留白，呼吸感强
 - **色彩克制**: 低饱和度莫兰迪色系，避免视觉疲劳
-- **无冗余装饰**: 依靠线条、色块的细微区分划分功能区
 
-### 2. Information Hierarchy
-- **文字层级清晰**: 通过字号、字重、颜色区分信息优先级
-- **功能分区明确**: 左侧功能栏 + 右侧主内容区
-- **渐进式披露**: 核心操作居中引导，次要信息折叠
+### 2. Clear Hierarchy
+- **文字层级清晰**: 通过字号、字重、颜色区分优先级
+- **时间线布局**: 按「今天」「昨天」等时间分组展示
+- **功能聚焦**: 底部悬浮面板承载核心操作
 
-### 3. Light Theme
-- **背景色**: `#f9fafb` (Gray 50) 作为页面底色
-- **卡片色**: `#ffffff` 白色卡片悬浮于浅灰背景
-- **输入控件**: `#f3f4f6` 灰底输入框，轻量化感
+### 3. Floating Action Panel
+- **底部悬浮**: 24px 圆角卡片悬浮于页面底部
+- **阴影分层**: 轻微阴影与主内容区分隔
+- **渐变按钮**: 粉色到紫色的渐变按钮突出核心功能
 
-### 4. Interactive Feedback
+### 4. Interactive States
 - **Hover**: 边框颜色加深，背景微变
 - **Active**: 背景填充，颜色强调
-- **Disabled**: 透明度降低，cursor 变化
-- **Loading**: 简洁的旋转加载动画
+- **Disabled**: 透明度降低
+- **Loading**: 简洁旋转加载动画
 
 ## Layout Structure
 
 ### Homepage Layout
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Header: Logo + Navigation (积分 | 历史 | 联系我)           │
-├──────────────┬──────────────────────────────────────────────┤
-│              │                                              │
-│   Sidebar    │              Main Content                    │
-│   (280px)    │                                              │
-│              │   ┌────────────────────────────────────┐    │
-│  [生图]      │   │                                    │    │
-│  [历史记录]  │   │         Interactive Area           │    │
-│              │   │                                    │    │
-│              │   │   - 对话式交互                      │    │
-│              │   │   - 输入框 + 发送按钮               │    │
-│              │   │                                    │    │
-│              │   └────────────────────────────────────┘    │
-│              │                                              │
-└──────────────┴──────────────────────────────────────────────┘
+┌────┬────────────────────────────────────────────────────────────┐
+│    │  Header: 标题 + 搜索 + 视图切换 + 联系我                   │
+│ S  ├────────────────────────────────────────────────────────────┤
+│ I  │                                                            │
+│ D  │   Content Area (时间线布局)                                │
+│ E  │   ┌──────────────────────────────────────────────────┐    │
+│ B  │   │  今天                                               │    │
+│ A  │   │  ┌────────────────────────────────────────────┐  │    │
+│ R  │   │  │  创作卡片 (缩略图 + 标题 + 类型 + 时间)    │  │    │
+│    │   │  └────────────────────────────────────────────┘  │    │
+│ 4  │   │  ┌────────────────────────────────────────────┐  │    │
+│ 8  │   │  │  创作卡片                                    │  │    │
+│ p  │   │  └────────────────────────────────────────────┘  │    │
+│ x  │   │                                                    │    │
+│    │   │  昨天                                               │    │
+│    │   │  ...                                                │    │
+│    │   └──────────────────────────────────────────────────┘    │
+│    │                                                            │
+├────┴────────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  底部悬浮创作面板                                          │   │
+│  │  [图片] [视频] [数字人] [配音]  |  输入框 + AI灵感 + 积分  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Sidebar Design
-- 固定宽度 280px
-- 顶部 Logo + Slogan
-- 底部「需求投稿」入口
-- 中间功能列表
-- 简洁分隔线区分区块
+- 固定宽度 48px，纯图标导航
+- 垂直排列：创作、资产、消息、设置
+- 选中状态：深色背景 + 图标高亮
+- 未选中：浅灰色图标
+- 底部用户头像入口
 
-### Tool Pages Layout
-- Header + 返回按钮
-- 居中内容区 (max-width: 768px)
-- 表单卡片式布局
-- 底部操作按钮
+### Floating Action Panel
+- 位置：固定在底部，距底部 24px
+- 宽度：从侧边栏右边缘到屏幕右边缘
+- 圆角：24px
+- 阴影：`0 10px 15px rgba(0,0,0,0.1)`
+- 内部结构：
+  - 类型切换：胶囊式切换按钮组
+  - 输入区域：大文本框 + 渐变发送按钮
+  - 底部工具栏：AI灵感、精准改图 Beta、积分显示
 
-## Components
+## Component Specifications
 
-### Cards
-- **Background**: `#ffffff`
-- **Border**: `1px solid #e5e7eb`
-- **Border Radius**: `16px` (xl)
-- **Padding**: `24px`
-- **Shadow**: none (flat design)
-- **Hover**: border-color → `#d1d5db`
+### Navigation Icon Button
+```css
+/* Default */
+width: 40px;
+height: 40px;
+border-radius: 12px;
+color: #9ca3af;  /* Gray 400 */
 
-### Buttons
+/* Hover */
+color: #374151;  /* Gray 700 */
+background: #f3f4f6;  /* Gray 100 */
 
-#### Primary Button
-- Background: `#111827` (gray-900)
-- Text: `#ffffff`
-- Hover: `#374151` (gray-700)
-- Border Radius: `12px`
-- Height: `48px` (py-3.5)
-- Font: Medium
+/* Active */
+background: #f3f4f6;
+color: #111827;  /* Gray 900 */
+```
 
-#### Secondary Button
-- Background: `#ffffff`
-- Border: `1px solid #e5e7eb`
-- Text: `#374151`
-- Hover: `#f3f4f6`
-- Border Radius: `12px`
+### Card Component
+```css
+background: #ffffff;
+border-radius: 16px;
+border: 1px solid #e5e7eb;
+padding: 16px;
+transition: box-shadow 200ms;
+```
 
-#### Icon Button
-- Background: `#f3f4f6`
-- Hover: `#e5e7eb`
-- Border Radius: `8px`
-- Size: `36px × 36px`
+### Pill Toggle Button
+```css
+/* Inactive */
+background: #f3f4f6;
+color: #6b7280;
 
-### Input Fields
-- Background: `#f3f4f6`
-- Border: `1px solid #e5e7eb`
-- Border Radius: `12px`
-- Focus Border: `#9ca3af`
-- Focus Ring: `ring-2 ring-gray-100`
-- Padding: `12px 16px`
+/* Active */
+background: #ffffff;
+color: #111827;
+box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+```
 
-### Badges
-- Border Radius: `8px`
-- Padding: `4px 8px`
-- Font Size: `12px`
-- Font Weight: Medium
-- Colored background + matching text color
+### Gradient Action Button
+```css
+background: linear-gradient(135deg, #ec4899, #8b5cf6);
+border-radius: 12px;
+width: 48px;
+height: 48px;
+```
 
-### Tabs
-- Underline style: `border-b-2`
-- Active: border-gray-900, text-gray-900
-- Inactive: border-transparent, text-gray-500
-- Hover: text-gray-700
+### Primary Button
+```css
+background: #111827;
+color: #ffffff;
+border-radius: 12px;
+padding: 8px 16px;
+font-weight: 500;
+```
 
-## Icons
+### Input Field
+```css
+background: #f9fafb;
+border: 1px solid #e5e7eb;
+border-radius: 12px;
+padding: 12px 16px;
+```
 
-- **Library**: Lucide React
-- **Sizes**: 16px (inline) / 20px (buttons) / 24px (headers)
-- **Colors**: Match text color context
-- **Tool Icons**: Each tool has unique color accent
+## Icon System
 
-## Animations
+### Icons Used
+- 侧边栏：`Wand2`, `FolderOpen`, `MessageSquare`, `Settings`
+- 功能：`Sparkles` (AI灵感), `Edit3` (精准改图), `Upload`, `Coins`
+- 操作：`Send`, `Download`, `Copy`, `RotateCcw`, `Search`
+- 状态：`List`, `Grid3X3`, `ChevronDown`, `X`
+- 内容：`Image`, `Video`, `User`, `Mail`
+- 尺寸：16-20px，stroke-width: 1.5-2
 
-- **Transitions**: 150-200ms ease
-- **Loading Spinner**: Lucide Loader2 with spin animation
-- **Page Transitions**: Fade in on mount
-- **Hover States**: 150ms color/border transitions
+### Icon Style
+- 线性极简图标
+- 2px 左右的线条
+- 统一 stroke-width
+- 高辨识度
 
-## Responsive Design
+## Color Usage
 
-### Breakpoints
-- Mobile: < 640px
-- Tablet: 640px - 1024px
-- Desktop: > 1024px
+### Primary Text
+- 标题：Gray 900 (#111827)
+- 正文：Gray 700 (#374151)
+- 辅助：Gray 500 (#6b7280)
 
-### Mobile Adaptations
-- Sidebar becomes bottom navigation or hamburger menu
-- Single column layout
-- Full-width cards
+### Status Indicators
+- 积分不足：Red 500 (#ef4444)
+- 会员/Beta 标签：Blue 500 (#3b82f6)
 
-## Accessibility
+### Accent Elements
+- AI灵感按钮：Pink 50 背景 + Pink 600 文字
+- 精准改图：Gray 100 背景
+- Beta 标签：Blue 500 填充白字
 
-- **Color Contrast**: Minimum 4.5:1 for text
-- **Focus States**: Visible focus rings
-- **Screen Reader**: Proper ARIA labels
-- **Keyboard Navigation**: Full tab support
+## Responsive Behavior
+
+### Desktop (>1024px)
+- 侧边栏固定 48px
+- 底部面板固定在视口底部
+- 主内容区自适应
+
+### Tablet (768-1024px)
+- 侧边栏保持 48px
+- 底部面板宽度自适应
 
 ## Future Considerations
 
-- [ ] Dark mode support
-- [ ] Skeleton loading states
-- [ ] Toast notifications
-- [ ] Tooltip documentation
-- [ ] Empty state illustrations
+- [ ] 暗色模式适配
+- [ ] 骨架屏加载状态
+- [ ] Toast 通知组件
+- [ ] 下拉选择器组件
+- [ ] 工具提示文档
+- [ ] 响应式移动端适配

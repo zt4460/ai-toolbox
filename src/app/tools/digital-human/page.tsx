@@ -2,217 +2,246 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, UserIcon, Sparkles, Loader2, Upload, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import Image from 'next/image';
+import { 
+  ArrowLeft,
+  Wand2,
+  Sparkles,
+  Download,
+  Copy,
+  RotateCcw,
+  Image as ImageIcon,
+  Video,
+  Coins,
+  Mail,
+  MessageSquare,
+  X,
+  Send,
+  User,
+  Volume2
+} from 'lucide-react';
 
 export default function DigitalHumanPage() {
-  const [template, setTemplate] = useState('default');
-  const [script, setScript] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
+  const [text, setText] = useState('');
+  const [voice, setVoice] = useState('female-warm');
+  const [avatar, setAvatar] = useState('professional-female');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<{ videoUrl: string; status: string } | null>(null);
-  const [error, setError] = useState('');
-  const [dragActive, setDragActive] = useState(false);
-
-  const templates = [
-    { id: 'default', name: '默认数字人', description: '通用场景' },
-    { id: 'business', name: '商务主播', description: '适合新闻、汇报' },
-    { id: 'casual', name: '休闲主播', description: '适合娱乐、生活' },
-    { id: 'female', name: '女性形象', description: '温柔知性' },
-    { id: 'male', name: '男性形象', description: '稳重专业' },
-  ];
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAudioUrl(url);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('audio/')) {
-      const url = URL.createObjectURL(file);
-      setAudioUrl(url);
-    }
-  };
+  const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!script.trim() && !audioUrl) {
-      setError('请输入文案或上传音频');
-      return;
-    }
-
+    if (!text.trim()) return;
+    
     setIsGenerating(true);
-    setError('');
-
+    setError(null);
+    
     try {
       const response = await fetch('/api/digital-human/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template, script, audioUrl }),
+        body: JSON.stringify({ text, voice, avatar }),
       });
-
+      
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '生成失败');
+      
+      if (data.success) {
+        setGeneratedVideo(data.videoUrl || null);
+      } else {
+        setError(data.error || '生成失败，请重试');
       }
-
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成失败，请重试');
+    } catch {
+      setError('网络错误，请检查连接后重试');
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
-        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
-            <UserIcon className="w-4 h-4 text-cyan-600" />
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+      {/* 顶部栏 */}
+      <header className="h-14 bg-white border-b border-gray-200 px-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/"
+            className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-lg font-semibold text-gray-900">数字人</h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+            <Coins className="w-4 h-4 text-blue-500" />
+            <span className="text-sm text-gray-700">200 积分</span>
           </div>
-          <span className="font-semibold text-gray-900">数字人</span>
         </div>
       </header>
-
-      {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI 数字人</h1>
-          <p className="text-gray-500">选择形象，输入文案，生成数字人视频</p>
-        </div>
-
-        {/* Template Selection */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-          <Label className="text-gray-700 mb-3 block">选择数字人形象</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTemplate(t.id)}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  template === t.id
-                    ? 'border-cyan-300 bg-cyan-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full bg-gray-200 mb-2 flex items-center justify-center">
-                  <UserIcon className="w-6 h-6 text-gray-400" />
-                </div>
-                <p className="font-medium text-gray-900 text-sm">{t.name}</p>
-                <p className="text-xs text-gray-500">{t.description}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Script Input */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-          <Label htmlFor="script" className="text-gray-700 mb-3 block">
-            输入文案
-          </Label>
-          <textarea
-            id="script"
-            placeholder="输入你要数字人说的内容..."
-            value={script}
-            onChange={(e) => setScript(e.target.value)}
-            className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 resize-none outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100 transition-all"
-          />
-        </div>
-
-        {/* Audio Upload */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-          <Label className="text-gray-700 mb-3 block">或上传配音音频</Label>
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-            onDragLeave={() => setDragActive(false)}
-            onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
-              dragActive
-                ? 'border-cyan-400 bg-cyan-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onClick={() => document.getElementById('audio-upload')?.click()}
-          >
-            <input
-              id="audio-upload"
-              type="file"
-              accept="audio/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            {audioUrl ? (
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center">
-                  <Play className="w-5 h-5 text-cyan-600" />
-                </div>
-                <span className="text-cyan-600 font-medium">音频已上传</span>
-              </div>
-            ) : (
-              <>
-                <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-                <p className="text-gray-600 mb-1">拖拽音频文件到此处，或点击上传</p>
-                <p className="text-xs text-gray-400">支持 MP3、WAV 格式</p>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              生成中，请稍候...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              生成数字人视频
-            </>
-          )}
-        </button>
-
-        {/* Results */}
-        {result && (
-          <div className="mt-8">
-            <h3 className="text-sm font-medium text-gray-500 mb-4">生成结果</h3>
-            <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-200 border border-gray-200">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-300 flex items-center justify-center">
-                    <UserIcon className="w-8 h-8 text-gray-500" />
-                  </div>
-                  <p className="text-gray-500">数字人视频生成完成</p>
-                </div>
-              </div>
+      
+      <main className="flex-1 overflow-auto pb-24">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* 类型切换 */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="flex bg-white border border-gray-200 rounded-lg p-0.5">
+              {[
+                { type: 'image', label: '图片', href: '/tools/image', icon: ImageIcon },
+                { type: 'video', label: '视频', href: '/tools/video', icon: Wand2 },
+                { type: 'digital-human', label: '数字人', href: '/tools/digital-human', icon: MessageSquare },
+                { type: 'lip-sync', label: '配音', href: '/tools/lip-sync', icon: Sparkles },
+              ].map((item) => (
+                <Link
+                  key={item.type}
+                  href={item.href}
+                  className={`px-4 py-1.5 text-sm rounded-md transition-all flex items-center gap-1.5 ${
+                    item.type === 'digital-human' 
+                      ? 'bg-gray-900 text-white' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </div>
-        )}
+
+          {/* 创作面板 */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            {/* 形象选择 */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">选择数字人形象</label>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { id: 'professional-female', name: '职业女性', emoji: '👩‍💼' },
+                  { id: 'business-male', name: '商务男士', emoji: '👨‍💼' },
+                  { id: 'casual-female', name: '休闲女性', emoji: '👩‍🦰' },
+                  { id: 'young-male', name: '年轻男士', emoji: '👨‍🎓' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setAvatar(item.id)}
+                    className={`p-3 rounded-xl border-2 transition-all ${
+                      avatar === item.id 
+                        ? 'border-gray-900 bg-gray-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-3xl mb-1">{item.emoji}</div>
+                    <div className="text-xs text-gray-600">{item.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 音色选择 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">选择音色</label>
+              <div className="flex gap-2">
+                {[
+                  { id: 'female-warm', name: '温柔女声' },
+                  { id: 'male磁性', name: '磁性男声' },
+                  { id: 'young-female', name: '青春女声' },
+                  { id: 'formal-male', name: '正式男声' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setVoice(item.id)}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                      voice === item.id 
+                        ? 'bg-gray-900 text-white' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 输入区域 */}
+            <div className="relative mb-4">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="输入你想让数字人说的内容..."
+                className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-gray-300 transition-colors"
+              />
+              <button
+                onClick={handleGenerate}
+                disabled={!text.trim() || isGenerating}
+                className="absolute bottom-4 right-4 w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            {/* AI灵感 */}
+            <div className="flex items-center justify-between">
+              <button className="px-3 py-1.5 bg-pink-50 text-pink-600 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-pink-100 transition-colors">
+                <Sparkles className="w-4 h-4" />
+                AI灵感
+              </button>
+              
+              <button
+                onClick={() => { setText(''); setGeneratedVideo(null); }}
+                className="px-3 py-1.5 text-gray-500 rounded-lg text-sm flex items-center gap-1.5 hover:bg-gray-100 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                重置
+              </button>
+            </div>
+          </div>
+
+          {/* 错误提示 */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* 生成结果 */}
+          {generatedVideo && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">生成结果</h2>
+              <div className="relative bg-black rounded-xl overflow-hidden">
+                <video src={generatedVideo} controls className="w-full" />
+              </div>
+            </div>
+          )}
+
+          {/* 提示信息 */}
+          {!generatedVideo && !isGenerating && (
+            <div className="mt-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                <User className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500">选择形象和音色，输入文案开始创作</p>
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* 底部悬浮操作栏 */}
+      <div className="fixed bottom-6 left-14 right-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                <Coins className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-gray-700">200 积分</span>
+              </div>
+              <span className="text-xs text-red-500">本次消耗 30 积分/分钟</span>
+            </div>
+            <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+              立即创作
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

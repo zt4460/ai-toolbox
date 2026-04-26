@@ -2,216 +2,258 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, VideoIcon, Sparkles, Loader2, Download, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import Image from 'next/image';
+import { 
+  ArrowLeft,
+  Wand2,
+  Sparkles,
+  Download,
+  Copy,
+  RotateCcw,
+  ChevronDown,
+  Image as ImageIcon,
+  Video,
+  Coins,
+  Mail,
+  MessageSquare,
+  X,
+  Send
+} from 'lucide-react';
 
-export default function VideoGenerationPage() {
+export default function VideoToolPage() {
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState('5');
   const [ratio, setRatio] = useState('16:9');
   const [resolution, setResolution] = useState('720p');
-  const [generateAudio, setGenerateAudio] = useState(true);
+  const [generateAudio, setGenerateAudio] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [error, setError] = useState('');
-  const [showVideo, setShowVideo] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('请输入视频描述');
-      return;
-    }
-
+    if (!prompt.trim()) return;
+    
     setIsGenerating(true);
-    setError('');
-    setVideoUrl('');
-    setShowVideo(false);
-
+    setError(null);
+    setGeneratedVideo(null);
+    
     try {
       const response = await fetch('/api/video/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, duration, ratio, resolution, generateAudio }),
       });
-
+      
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '生成失败');
+      
+      if (data.success && data.videoUrl) {
+        setGeneratedVideo(data.videoUrl);
+      } else {
+        setError(data.error || '生成失败，请重试');
       }
-
-      setVideoUrl(data.videoUrl || '');
-      setShowVideo(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成失败，请重试');
+    } catch {
+      setError('网络错误，请检查连接后重试');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleDownload = async () => {
-    if (!videoUrl) return;
-    
-    try {
-      const response = await fetch(videoUrl);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'generated-video.mp4';
-      link.click();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('下载失败:', err);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
-        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center">
-            <VideoIcon className="w-4 h-4 text-pink-600" />
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+      {/* 顶部栏 */}
+      <header className="h-14 bg-white border-b border-gray-200 px-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/"
+            className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-lg font-semibold text-gray-900">视频生成</h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+            <Coins className="w-4 h-4 text-blue-500" />
+            <span className="text-sm text-gray-700">200 积分</span>
           </div>
-          <span className="font-semibold text-gray-900">视频生成</span>
         </div>
       </header>
-
-      {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI 视频生成</h1>
-          <p className="text-gray-500">输入描述，AI 为你创作精彩视频</p>
-        </div>
-
-        {/* Input Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-          <Label htmlFor="prompt" className="text-gray-700 mb-3 block">
-            视频描述
-          </Label>
-          <textarea
-            id="prompt"
-            placeholder="例如：一只可爱的橘猫在草地上追逐蝴蝶，阳光明媚，微风轻拂..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 resize-none outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 transition-all"
-          />
-
-          {/* Options */}
-          <div className="grid grid-cols-3 gap-4 mt-5">
-            <div>
-              <label className="text-sm text-gray-500 mb-1.5 block">视频时长</label>
-              <select 
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                className="w-full text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-2.5 outline-none cursor-pointer"
-              >
-                <option value="4">4 秒</option>
-                <option value="5">5 秒</option>
-                <option value="8">8 秒</option>
-                <option value="10">10 秒</option>
-                <option value="12">12 秒</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-500 mb-1.5 block">画面比例</label>
-              <select 
-                value={ratio}
-                onChange={(e) => setRatio(e.target.value)}
-                className="w-full text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-2.5 outline-none cursor-pointer"
-              >
-                <option value="16:9">16:9 宽屏</option>
-                <option value="9:16">9:16 竖屏</option>
-                <option value="1:1">1:1 方形</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-500 mb-1.5 block">分辨率</label>
-              <select 
-                value={resolution}
-                onChange={(e) => setResolution(e.target.value)}
-                className="w-full text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-2.5 outline-none cursor-pointer"
-              >
-                <option value="480p">480p</option>
-                <option value="720p">720p</option>
-                <option value="1080p">1080p</option>
-              </select>
+      
+      <main className="flex-1 overflow-auto pb-24">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* 类型切换 */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="flex bg-white border border-gray-200 rounded-lg p-0.5">
+              {[
+                { type: 'image', label: '图片', href: '/tools/image', icon: ImageIcon },
+                { type: 'video', label: '视频', href: '/tools/video', icon: Wand2 },
+                { type: 'digital-human', label: '数字人', href: '/tools/digital-human', icon: MessageSquare },
+                { type: 'lip-sync', label: '配音', href: '/tools/lip-sync', icon: Sparkles },
+              ].map((item) => (
+                <Link
+                  key={item.type}
+                  href={item.href}
+                  className={`px-4 py-1.5 text-sm rounded-md transition-all flex items-center gap-1.5 ${
+                    item.type === 'video' 
+                      ? 'bg-gray-900 text-white' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </div>
 
-          {/* Audio Option */}
-          <div className="flex items-center gap-3 mt-5 pt-5 border-t border-gray-100">
-            <input
-              type="checkbox"
-              id="generateAudio"
-              checked={generateAudio}
-              onChange={(e) => setGenerateAudio(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500"
-            />
-            <Label htmlFor="generateAudio" className="text-gray-600 cursor-pointer text-sm">
-              生成同步音频（语音、音效、背景音乐）
-            </Label>
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              生成中，请稍候...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              开始生成
-            </>
-          )}
-        </button>
-
-        {/* Results */}
-        {showVideo && (
-          <div className="mt-8">
-            <h3 className="text-sm font-medium text-gray-500 mb-4">生成结果</h3>
-            <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-200 border border-gray-200">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-300 flex items-center justify-center">
-                    <Play className="w-8 h-8 text-gray-500" />
-                  </div>
-                  <p className="text-gray-500">视频生成完成</p>
-                </div>
+          {/* 创作面板 */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            {/* 参数设置 */}
+            <div className="grid grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">时长</label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="w-full h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-300 relative"
+                >
+                  <option value="4">4秒</option>
+                  <option value="5">5秒</option>
+                  <option value="8">8秒</option>
+                  <option value="12">12秒</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" style={{ marginTop: '12px', marginRight: '8px' }} />
               </div>
-              <button 
-                onClick={handleDownload}
-                className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-lg hover:bg-gray-100 transition-colors"
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">比例</label>
+                <select
+                  value={ratio}
+                  onChange={(e) => setRatio(e.target.value)}
+                  className="w-full h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-300 relative"
+                >
+                  <option value="16:9">16:9 横屏</option>
+                  <option value="9:16">9:16 竖屏</option>
+                  <option value="1:1">1:1 方屏</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" style={{ marginTop: '12px', marginRight: '8px' }} />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">分辨率</label>
+                <select
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  className="w-full h-9 pl-3 pr-8 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-300 relative"
+                >
+                  <option value="480p">480p</option>
+                  <option value="720p">720p</option>
+                  <option value="1080p">1080p</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" style={{ marginTop: '12px', marginRight: '8px' }} />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">音频</label>
+                <button
+                  onClick={() => setGenerateAudio(!generateAudio)}
+                  className={`w-full h-9 px-3 rounded-lg text-sm transition-colors ${
+                    generateAudio 
+                      ? 'bg-pink-50 text-pink-600 border border-pink-200' 
+                      : 'bg-gray-50 text-gray-600 border border-gray-200'
+                  }`}
+                >
+                  {generateAudio ? '生成配乐' : '无音频'}
+                </button>
+              </div>
+            </div>
+
+            {/* 输入区域 */}
+            <div className="relative mb-4">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="描述你想要生成的视频内容..."
+                className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:border-gray-300 transition-colors"
+              />
+              <button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || isGenerating}
+                className="absolute bottom-4 right-4 w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download className="w-4 h-4 text-gray-700" />
-                <span className="text-sm font-medium text-gray-700">下载视频</span>
+                {isGenerating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            {/* AI灵感 */}
+            <div className="flex items-center justify-between">
+              <button className="px-3 py-1.5 bg-pink-50 text-pink-600 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-pink-100 transition-colors">
+                <Sparkles className="w-4 h-4" />
+                AI灵感
+              </button>
+              
+              <button
+                onClick={() => { setPrompt(''); setGeneratedVideo(null); }}
+                className="px-3 py-1.5 text-gray-500 rounded-lg text-sm flex items-center gap-1.5 hover:bg-gray-100 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                重置
               </button>
             </div>
           </div>
-        )}
+
+          {/* 错误提示 */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* 生成结果 */}
+          {generatedVideo && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">生成结果</h2>
+              <div className="relative bg-black rounded-xl overflow-hidden">
+                <video
+                  src={generatedVideo}
+                  controls
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 提示信息 */}
+          {!generatedVideo && !isGenerating && (
+            <div className="mt-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                <Video className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500">输入描述词，点击发送开始创作</p>
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* 底部悬浮操作栏 */}
+      <div className="fixed bottom-6 left-14 right-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                <Coins className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-gray-700">200 积分</span>
+              </div>
+              <span className="text-xs text-red-500">本次消耗 50 积分</span>
+            </div>
+            <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+              立即创作
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
