@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { 
   Wand2,
   FolderOpen,
@@ -103,6 +104,7 @@ type FashionMode = 'product' | 'model';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCredits, setShowCredits] = useState(false);
@@ -119,6 +121,7 @@ export default function HomePage() {
   const [selectedRatio, setSelectedRatio] = useState(RATIOS[0]);
   const [imageCount, setImageCount] = useState(1);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const referenceInputRef = useRef<HTMLInputElement>(null);
   const [generatedImages, setGeneratedImages] = useState<Array<{id: string; url: string; prompt: string; time: string}>>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -281,9 +284,12 @@ export default function HomePage() {
             </div>
             
             {/* 用户头像 */}
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium cursor-pointer hover:opacity-90 transition-opacity">
+            <button 
+              onClick={() => user ? router.push('/profile') : router.push('/auth')}
+              className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium hover:opacity-90 transition-opacity"
+            >
               {user?.nickname?.[0]?.toUpperCase() || 'U'}
-            </div>
+            </button>
           </div>
         </header>
 
@@ -514,6 +520,20 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* 参考图上传 - 使用全局隐藏input */}
+      <input
+        type="file"
+        id="main-reference-upload"
+        accept="image/*"
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            setReferenceImage(URL.createObjectURL(file));
+          }
+        }}
+      />
 
       {/* 电商专用弹窗 */}
       {showInspiration && (
