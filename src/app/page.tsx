@@ -517,7 +517,7 @@ export default function HomePage() {
                 </button>
                 {showRatioSelect && (
                   <div 
-                    className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl z-20 p-4"
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl z-20 p-4"
                     style={{ width: '340px' }}
                   >
                     <div className="text-sm font-medium text-gray-900 dark:text-white mb-4">选择图片比例</div>
