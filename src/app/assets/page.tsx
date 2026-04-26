@@ -20,18 +20,21 @@ import {
   Grid,
   List,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 
 interface GenerationRecord {
   id: string;
   image_url: string;
+  video_url?: string; // 视频URL（可选）
   prompt: string;
   resolution: string;
   ratio: string;
   credits_cost: number;
   created_at: string;
+  type?: 'image' | 'video'; // 资源类型
 }
 
 export default function AssetsPage() {
@@ -71,15 +74,20 @@ export default function AssetsPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // 模拟数据
-      const mockRecords: GenerationRecord[] = Array.from({ length: 12 }, (_, i) => ({
-        id: `gen-${i + 1}`,
-        image_url: `https://picsum.photos/seed/${Date.now() + i}/512/512`,
-        prompt: `AI生成的艺术作品 #${i + 1}`,
-        resolution: ['1K', '2K', '4K'][i % 3],
-        ratio: ['1:1', '16:9', '9:16'][i % 3],
-        credits_cost: [1, 2, 4][i % 3],
-        created_at: new Date(Date.now() - i * 3600000 * 2).toISOString(),
-      }));
+      const mockRecords: GenerationRecord[] = Array.from({ length: 12 }, (_, i) => {
+        const isVideo = i % 4 === 0; // 每4个中有一个视频
+        return {
+          id: `gen-${i + 1}`,
+          image_url: isVideo ? '/placeholder-video.png' : `https://picsum.photos/seed/${Date.now() + i}/512/512`,
+          video_url: isVideo ? `https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4` : undefined,
+          prompt: isVideo ? `AI生成的动画作品 #${i + 1}` : `AI生成的艺术作品 #${i + 1}`,
+          resolution: ['1K', '2K', '4K'][i % 3],
+          ratio: ['1:1', '16:9', '9:16'][i % 3],
+          credits_cost: isVideo ? 10 : [1, 2, 4][i % 3],
+          created_at: new Date(Date.now() - i * 3600000 * 2).toISOString(),
+          type: isVideo ? 'video' : 'image',
+        };
+      });
       
       setRecords(mockRecords);
       setLoading(false);
@@ -108,6 +116,39 @@ export default function AssetsPage() {
   const handleDelete = (id: string) => {
     setRecords(prev => prev.filter(r => r.id !== id));
     setSelectedRecord(null);
+  };
+
+  // 下载文件（支持图片和视频）
+  // eslint-disable-next-line react-hooks/purity
+  const handleDownload = async (record: GenerationRecord) => {
+    const url = record.type === 'video' ? record.video_url : record.image_url;
+    if (!url) return;
+
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      // 确定文件扩展名和 MIME 类型
+      const extension = url.split('.').pop()?.split('?')[0] || (record.type === 'video' ? 'mp4' : 'png');
+      const mimeType = blob.type || (record.type === 'video' ? 'video/mp4' : 'image/png');
+
+      // 创建下载链接
+      // eslint-disable-next-line react-hooks/purity
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      // eslint-disable-next-line react-hooks/purity
+      const timestamp = Date.now();
+      link.download = `AI创作_${record.id.slice(0, 8)}_${timestamp}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('下载失败:', error);
+      // 如果 fetch 失败，尝试直接打开链接
+      window.open(url, '_blank');
+    }
   };
 
   // 格式化时间
@@ -249,7 +290,7 @@ export default function AssetsPage() {
               {filteredRecords.map((record) => (
                 <div 
                   key={record.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                   onClick={() => setSelectedRecord(record)}
                 >
                   <div className="aspect-square relative bg-gray-100 dark:bg-gray-700">
@@ -260,6 +301,23 @@ export default function AssetsPage() {
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
+                    {/* 下载按钮 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(record);
+                      }}
+                      className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors opacity-0 group-hover:opacity-100"
+                      title="下载"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    {/* 类型标签 */}
+                    {record.type === 'video' && (
+                      <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-purple-500/80 text-white text-xs rounded-full">
+                        视频
+                      </span>
+                    )}
                   </div>
                   <div className="p-3">
                     <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-2">{record.prompt}</p>
@@ -315,6 +373,13 @@ export default function AssetsPage() {
                       <td className="px-4 py-3 text-sm text-gray-400">{formatTime(record.created_at)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleDownload(record)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="下载"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleCopy(record.prompt, record.id)}
                             className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -402,6 +467,13 @@ export default function AssetsPage() {
               </div>
               
               <div className="flex gap-3">
+                <button
+                  onClick={() => handleDownload(selectedRecord)}
+                  className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  下载{selectedRecord.type === 'video' ? '视频' : '图片'}
+                </button>
                 <button
                   onClick={() => handleCopy(selectedRecord.prompt, selectedRecord.id)}
                   className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
