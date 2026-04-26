@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { execSync } from 'child_process';
-import { getReportBuffer, createWrappedFetch } from 'coze-coding-dev-sdk';
 
 let envLoaded = false;
 
@@ -10,21 +9,37 @@ interface SupabaseCredentials {
 }
 
 function loadEnv(): void {
-  if (envLoaded || (process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_ANON_KEY)) {
+  if (envLoaded) {
     return;
   }
 
-  try {
-    try {
-      require('dotenv').config();
-      if (process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_ANON_KEY) {
-        envLoaded = true;
-        return;
-      }
-    } catch {
-      // dotenv not available
-    }
+  // Check if already loaded
+  if (process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_ANON_KEY) {
+    envLoaded = true;
+    return;
+  }
 
+  // Try dotenv first
+  try {
+    require('dotenv').config();
+    if (process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_ANON_KEY) {
+      envLoaded = true;
+      return;
+    }
+  } catch {
+    // dotenv not available
+  }
+
+  // Check NEXT_PUBLIC_ prefix variables
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    process.env.COZE_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.COZE_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    envLoaded = true;
+    return;
+  }
+
+  // Try to load from project env vars
+  try {
     const pythonCode = `
 import os
 import sys
@@ -100,29 +115,12 @@ function getSupabaseClient(token?: string): SupabaseClient {
     key = serviceRoleKey ?? anonKey;
   }
 
-  const globalOptions: Record<string, any> = {};
-  if (token) {
-    globalOptions.headers = { Authorization: `Bearer ${token}` };
-  }
-  try {
-    const buffer = getReportBuffer();
-    if (buffer) {
-      globalOptions.fetch = createWrappedFetch(buffer, 'supabase');
-    }
-  } catch {
-    // Silent — reporting setup failure should not block client creation
-  }
-
   return createClient(url, key, {
-    global: globalOptions,
-    db: {
-      timeout: 60000,
-    },
     auth: {
-      autoRefreshToken: false,
       persistSession: false,
+      autoRefreshToken: false,
     },
   });
 }
 
-export { loadEnv, getSupabaseCredentials, getSupabaseServiceRoleKey, getSupabaseClient };
+export { getSupabaseClient };

@@ -35,31 +35,27 @@ export async function POST(request: NextRequest) {
     const isPhone = /^1[3-9]\d{9}$/.test(identifier);
     const username = isEmail ? null : isPhone ? null : identifier;
 
-    // 验证验证码 - 根据账号类型查询对应字段
-    let codeRecord = null;
-    
+    // 验证验证码
+    let codeQuery = client
+      .from('verification_codes')
+      .select('*')
+      .eq('code', code)
+      .eq('used', false)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
     if (isEmail) {
-      const result = await client
-        .from('verification_codes')
-        .select('*')
-        .eq('code', code)
-        .eq('email', identifier)
-        .eq('is_used', false)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      codeRecord = result.data;
+      codeQuery = codeQuery.eq('email', identifier);
     } else if (isPhone) {
-      const result = await client
-        .from('verification_codes')
-        .select('*')
-        .eq('code', code)
-        .eq('phone', identifier)
-        .eq('is_used', false)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      codeRecord = result.data;
+      codeQuery = codeQuery.eq('phone', identifier);
+    }
+
+    const { data: codeRecord, error: codeError } = await codeQuery.maybeSingle();
+
+    console.log('验证码查询结果:', { codeRecord, codeError, identifier, code });
+
+    if (codeError) {
+      console.error('验证码查询错误:', codeError);
     }
 
     if (!codeRecord) {
@@ -82,7 +78,7 @@ export async function POST(request: NextRequest) {
     // 标记验证码已使用
     await client
       .from('verification_codes')
-      .update({ is_used: true })
+      .update({ used: true })
       .eq('id', codeRecord.id);
 
     // 检查账号是否已存在
@@ -136,16 +132,16 @@ export async function POST(request: NextRequest) {
     // 处理激活码
     let bonusCredits = 0;
     if (activationCode) {
-      const { data: codeRecord, error: codeError } = await client
+      const { data: actCode, error: actError } = await client
         .from('activation_codes')
         .select('*')
         .eq('code', activationCode)
         .eq('is_used', false)
         .maybeSingle();
 
-      if (codeRecord && !codeError) {
-        if (!codeRecord.expires_at || new Date(codeRecord.expires_at) > new Date()) {
-          bonusCredits = codeRecord.credits || 0;
+      if (actCode && !actError) {
+        if (!actCode.expires_at || new Date(actCode.expires_at) > new Date()) {
+          bonusCredits = actCode.points || 0;
           
           if (bonusCredits > 0) {
             await client
@@ -160,7 +156,7 @@ export async function POST(request: NextRequest) {
                 used_by: newUser.id, 
                 used_at: new Date().toISOString() 
               })
-              .eq('id', codeRecord.id);
+              .eq('id', actCode.id);
 
             await client
               .from('credit_transactions')

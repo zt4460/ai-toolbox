@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const client = getSupabaseClient();
 
     // 判断账号类型
     const isEmail = identifier.includes('@');
     const isPhone = /^1[3-9]\d{9}$/.test(identifier);
 
     // 构建查询条件
-    let query = supabase
+    let query = client
       .from('verification_codes')
       .select('*')
       .eq('code', code)
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 标记验证码已使用
-    await supabase
+    await client
       .from('verification_codes')
       .update({ used: true })
       .eq('id', verifyCode.id);
