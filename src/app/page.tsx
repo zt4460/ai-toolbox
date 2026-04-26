@@ -59,10 +59,11 @@ const RESOLUTIONS = [
 
 // 比例配置
 const RATIOS = [
-  { id: '1:1', name: '1:1', description: '方形 (1:1)' },
-  { id: '16:9', name: '16:9', description: '横版 (16:9)' },
-  { id: '9:16', name: '9:16', description: '竖版 (9:16)' },
-  { id: '4:3', name: '4:3', description: '标准 (4:3)' },
+  { id: '1:1', name: '1:1', description: '方形', width: 1, height: 1 },
+  { id: '9:16', name: '9:16', description: '竖版', width: 9, height: 16 },
+  { id: '16:9', name: '16:9', description: '横版', width: 16, height: 9 },
+  { id: '2:3', name: '2:3', description: '竖版', width: 2, height: 3 },
+  { id: '3:2', name: '3:2', description: '横版', width: 3, height: 2 },
 ];
 
 // 电商灵感配置
@@ -451,19 +452,55 @@ export default function HomePage() {
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
                 {showRatioSelect && (
-                  <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden z-20 min-w-48">
-                    {RATIOS.map((ratio) => (
-                      <button
-                        key={ratio.id}
-                        onClick={() => { setSelectedRatio(ratio); setShowRatioSelect(false); }}
-                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                          selectedRatio.id === ratio.id ? 'bg-gray-50 dark:bg-gray-700' : ''
-                        }`}
-                      >
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{ratio.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{ratio.description}</div>
-                      </button>
-                    ))}
+                  <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl z-20 p-4">
+                    <div className="text-xs text-gray-400 mb-3">图片比例</div>
+                    <div className="flex gap-4">
+                      {RATIOS.map((ratio) => {
+                        const isSelected = selectedRatio.id === ratio.id;
+                        // 计算矩形尺寸，最大宽度28px，最大高度28px
+                        const maxSize = 28;
+                        const aspectRatio = ratio.width / ratio.height;
+                        let boxWidth, boxHeight;
+                        if (aspectRatio >= 1) {
+                          boxWidth = maxSize;
+                          boxHeight = Math.round(maxSize / aspectRatio);
+                        } else {
+                          boxHeight = maxSize;
+                          boxWidth = Math.round(maxSize * aspectRatio);
+                        }
+                        return (
+                          <button
+                            key={ratio.id}
+                            onClick={() => { setSelectedRatio(ratio); setShowRatioSelect(false); }}
+                            className="flex flex-col items-center gap-2"
+                          >
+                            <div 
+                              className={`${
+                                isSelected 
+                                  ? 'bg-gray-800 dark:bg-gray-600 ring-2 ring-gray-300 dark:ring-gray-500 ring-offset-2 dark:ring-offset-gray-800 rounded-2xl' 
+                                  : 'bg-transparent border-2 border-gray-300 dark:border-gray-600 rounded-lg'
+                              } flex items-center justify-center`}
+                              style={{ 
+                                width: `${maxSize + (isSelected ? 8 : 0)}px`, 
+                                height: `${maxSize + (isSelected ? 8 : 0)}px` 
+                              }}
+                            >
+                              <div 
+                                className={`${
+                                  isSelected 
+                                    ? 'bg-gray-600 dark:bg-gray-400' 
+                                    : 'bg-transparent border-2 border-gray-300 dark:border-gray-500'
+                                } rounded-md`}
+                                style={{ width: boxWidth, height: boxHeight }}
+                              />
+                            </div>
+                            <span className={`text-xs ${isSelected ? 'text-gray-800 dark:text-white font-medium' : 'text-gray-400'}`}>
+                              {ratio.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
