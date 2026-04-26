@@ -23,7 +23,8 @@ import {
   Globe,
   Image as ImageIcon,
   Shirt,
-  Camera
+  Camera,
+  Download
 } from 'lucide-react';
 import { useAuth } from './providers';
 
@@ -230,6 +231,25 @@ export default function HomePage() {
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
+  // 下载图片 - 使用 useCallback
+  const handleDownload = useCallback(async (url: string, id: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `AI创作_${id.slice(0, 8)}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      // 降级：直接打开新窗口
+      window.open(url, '_blank');
+    }
+  }, []);
+
   // 处理电商灵感 - 使用 useCallback
   const handleInspiration = useCallback(() => {
     const typeNames = IMAGE_TYPES
@@ -369,13 +389,22 @@ export default function HomePage() {
                           <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">{selectedRatio.id}</span>
                           <span className="text-xs text-gray-400">{img.time}</span>
                         </div>
-                        <button 
-                          onClick={() => handleCopy(img.prompt, img.id)}
-                          className="flex items-center gap-1.5 px-4 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm transition-colors"
-                        >
-                          {copiedId === img.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          {copiedId === img.id ? '已复制' : '复制'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleDownload(img.url, img.id)}
+                            className="flex items-center gap-1.5 px-4 py-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm transition-colors"
+                          >
+                            <Download className="w-4 h-4" />
+                            下载
+                          </button>
+                          <button 
+                            onClick={() => handleCopy(img.prompt, img.id)}
+                            className="flex items-center gap-1.5 px-4 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm transition-colors"
+                          >
+                            {copiedId === img.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            {copiedId === img.id ? '已复制' : '复制'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -448,85 +477,90 @@ export default function HomePage() {
                   onClick={() => setShowRatioSelect(!showRatioSelect)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                 >
+                  <div className="w-5 h-5 relative">
+                    {selectedRatio.id === '1:1' && (
+                      <div className="absolute inset-0 m-auto w-4 h-4 border-2 border-gray-500 rounded-sm" />
+                    )}
+                    {selectedRatio.id === '9:16' && (
+                      <div className="absolute inset-0 m-auto w-2.5 h-4 border-2 border-gray-500 rounded-sm" />
+                    )}
+                    {selectedRatio.id === '16:9' && (
+                      <div className="absolute inset-0 m-auto w-4 h-2.5 border-2 border-gray-500 rounded-sm" />
+                    )}
+                    {selectedRatio.id === '2:3' && (
+                      <div className="absolute inset-0 m-auto w-3 h-4 border-2 border-gray-500 rounded-sm" />
+                    )}
+                    {selectedRatio.id === '3:2' && (
+                      <div className="absolute inset-0 m-auto w-4 h-3 border-2 border-gray-500 rounded-sm" />
+                    )}
+                  </div>
                   <span className="text-sm text-gray-600 dark:text-gray-300">{selectedRatio.name}</span>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
                 {showRatioSelect && (
                   <div 
-                    className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 shadow-[0_2px_8px_rgba(240,240,240,0.8)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3)] z-20 px-3 py-3"
-                    style={{ width: '320px' }}
+                    className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl z-20 p-4"
+                    style={{ width: '340px' }}
                   >
-                    <div className="text-sm font-normal mb-4" style={{ color: '#333333' }}>图片比例</div>
-                    <div className="flex" style={{ gap: '12px' }}>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white mb-4">选择图片比例</div>
+                    <div className="grid grid-cols-5 gap-3">
                       {RATIOS.map((ratio) => {
                         const isSelected = selectedRatio.id === ratio.id;
-                        // 根据比例计算图标尺寸
-                        // 1:1: 40x40, 9:16: 20x40, 16:9: 40x22.5, 2:3: 26.7x40, 3:2: 40x26.7
-                        const iconSizes: Record<string, {w: number, h: number}> = {
-                          '1:1': {w: 40, h: 40},
-                          '9:16': {w: 20, h: 40},
-                          '16:9': {w: 40, h: 22.5},
-                          '2:3': {w: 26.7, h: 40},
-                          '3:2': {w: 40, h: 26.7},
-                        };
-                        const size = iconSizes[ratio.name] || {w: 40, h: 40};
                         return (
                           <button
                             key={ratio.id}
                             onClick={() => { setSelectedRatio(ratio); setShowRatioSelect(false); }}
-                            className="flex flex-col items-center"
-                            style={{ width: '60px' }}
+                            className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                              isSelected 
+                                ? 'bg-blue-50 dark:bg-blue-900/30' 
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
                           >
-                            <div 
-                              className="flex items-center justify-center"
-                              style={{ 
-                                width: '60px', 
-                                height: '60px',
-                                ...(isSelected 
-                                  ? { 
-                                      backgroundColor: '#E3F2FD', 
-                                      border: '2px solid #2196F3', 
-                                      borderRadius: '4px' 
-                                    } 
-                                  : { 
-                                      border: '1px solid #E0E0E0', 
-                                      borderRadius: '2px' 
-                                    }
-                                )
-                              }}
-                            >
-                              {isSelected ? (
-                                // 选中状态：中心黑色正方形
-                                <div 
-                                  style={{ 
-                                    width: '24px', 
-                                    height: '24px', 
-                                    backgroundColor: '#333333', 
-                                    borderRadius: '2px' 
-                                  }} 
-                                />
-                              ) : (
-                                // 未选中状态：空心矩形
-                                <div 
-                                  style={{ 
-                                    width: size.w, 
-                                    height: size.h, 
-                                    border: '1px solid #E0E0E0', 
-                                    borderRadius: '2px',
-                                    backgroundColor: 'transparent' 
-                                  }} 
-                                />
+                            <div className="w-12 h-12 flex items-center justify-center">
+                              {ratio.id === '1:1' && (
+                                <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-colors ${
+                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                                </div>
+                              )}
+                              {ratio.id === '9:16' && (
+                                <div className={`h-9 w-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && <div className="w-1 h-2 bg-white rounded-sm" />}
+                                </div>
+                              )}
+                              {ratio.id === '16:9' && (
+                                <div className={`w-9 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && <div className="w-2 h-1 bg-white rounded-sm" />}
+                                </div>
+                              )}
+                              {ratio.id === '2:3' && (
+                                <div className={`h-9 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && <div className="w-1.5 h-2 bg-white rounded-sm" />}
+                                </div>
+                              )}
+                              {ratio.id === '3:2' && (
+                                <div className={`w-9 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && <div className="w-2 h-1.5 bg-white rounded-sm" />}
+                                </div>
                               )}
                             </div>
                             <span 
-                              className="mt-1 text-xs"
-                              style={{ 
-                                color: isSelected ? '#2196F3' : '#666666',
-                                fontWeight: isSelected ? 500 : 400
-                              }}
+                              className={`mt-2 text-sm font-medium transition-colors ${
+                                isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                              }`}
                             >
                               {ratio.name}
                             </span>
+                            <span className="text-xs text-gray-400 mt-0.5">{ratio.description}</span>
                           </button>
                         );
                       })}
