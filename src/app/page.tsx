@@ -24,6 +24,7 @@ import {
   Image as ImageIcon,
   Shirt,
   Camera,
+  MessageCircle,
   Download
 } from 'lucide-react';
 import { useAuth } from './providers';
@@ -111,6 +112,7 @@ export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCredits, setShowCredits] = useState(false);
+  const [showCustomerService, setShowCustomerService] = useState(false);
   const [showModelSelect, setShowModelSelect] = useState(false);
   const [showInspiration, setShowInspiration] = useState(false);
   const [showRatioSelect, setShowRatioSelect] = useState(false);
@@ -338,6 +340,15 @@ export default function HomePage() {
             aria-label={isDarkMode ? '切换到浅色模式' : '切换到深色模式'}
           >
             {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+          </button>
+
+          {/* 联系客服 */}
+          <button
+            onClick={() => setShowCustomerService(true)}
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200"
+            aria-label="联系客服"
+          >
+            <MessageCircle className="w-6 h-6" />
           </button>
         </div>
       </aside>
@@ -1092,6 +1103,74 @@ export default function HomePage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 联系客服弹窗 */}
+      {showCustomerService && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowCustomerService(false)}>
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-2xl w-[420px] shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 标题栏 */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-blue-500" />
+                联系客服
+              </h3>
+              <button 
+                onClick={() => setShowCustomerService(false)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* 客服联系方式 */}
+            <div className="p-5 space-y-4">
+              {/* 微信 */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                  <span className="text-xl">💬</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">微信</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">待填写</p>
+                </div>
+              </div>
+              
+              {/* 邮箱 */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                  <span className="text-xl">📧</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">邮箱</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">待填写</p>
+                </div>
+              </div>
+              
+              {/* QQ */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                  <span className="text-xl">💭</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">QQ</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">待填写</p>
+                </div>
+              </div>
+              
+              {/* 工作时间 */}
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <span>🕐</span>
+                  工作时间：周一至周五 9:00-18:00
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
