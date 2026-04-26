@@ -2,11 +2,9 @@
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, MessageCircleIcon, Sparkles, Loader2, Upload, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowLeft, MessageCircleIcon, Sparkles, Loader2, Upload, Play, Download } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LipSyncPage() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -60,28 +58,24 @@ export default function LipSyncPage() {
   };
 
   const handleGenerate = async () => {
-    if (!videoFile && !script.trim()) {
-      setError('请上传视频或输入文案');
+    if (!videoUrl) {
+      setError('请上传视频');
+      return;
+    }
+
+    if (!script.trim()) {
+      setError('请输入配音文案');
       return;
     }
 
     setIsGenerating(true);
     setError('');
-    setResult(null);
 
     try {
-      const formData = new FormData();
-      
-      if (videoFile) {
-        formData.append('video', videoFile);
-      }
-      formData.append('script', script);
-      formData.append('language', language);
-      formData.append('voice', voice);
-
       const response = await fetch('/api/lip-sync/generate', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl, script, language, voice }),
       });
 
       const data = await response.json();
@@ -99,197 +93,153 @@ export default function LipSyncPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-amber-500/20 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500/20 rounded-full blur-[128px]" />
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            返回首页
-          </Link>
-          <div className="flex items-center gap-3 ml-auto">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <MessageCircleIcon className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">视频配音</span>
+      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
+        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </Link>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+            <MessageCircleIcon className="w-4 h-4 text-amber-600" />
           </div>
+          <span className="font-semibold text-gray-900">视频配音</span>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Video Upload */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mb-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Upload className="w-5 h-5 text-amber-400" />
-              <h2 className="text-xl font-semibold text-white">上传视频</h2>
-            </div>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">视频唇形同步</h1>
+          <p className="text-gray-500">上传视频，输入文案，自动生成配音</p>
+        </div>
 
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
-                dragActive
-                  ? 'border-amber-500 bg-amber-500/10'
-                  : 'border-white/10 bg-white/5 hover:bg-white/10'
-              }`}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {videoUrl ? (
-                <div className="space-y-4">
-                  <video
-                    src={videoUrl}
-                    className="max-h-48 mx-auto rounded-lg"
-                    muted
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <p className="text-sm text-white/60">{videoFile?.name}</p>
+        {/* Video Upload */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+          <Label className="text-gray-700 mb-3 block">上传视频</Label>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+              dragActive
+                ? 'border-amber-400 bg-amber-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            {videoUrl ? (
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Play className="w-5 h-5 text-amber-600" />
                 </div>
-              ) : (
-                <>
-                  <Play className="w-12 h-12 mx-auto mb-4 text-white/40" />
-                  <p className="text-white/80 mb-2">拖拽视频文件到此处，或点击选择</p>
-                  <p className="text-sm text-white/40">支持 MP4, MOV, AVI 格式</p>
-                </>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
-          </div>
-
-          {/* Script Input */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mb-6">
-            <div className="flex items-center gap-2 mb-6">
-              <MessageCircleIcon className="w-5 h-5 text-amber-400" />
-              <h2 className="text-xl font-semibold text-white">输入配音文案</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="script" className="text-white/80 mb-2 block">
-                  配音脚本
-                </Label>
-                <Textarea
-                  id="script"
-                  placeholder="输入你想让视频中人物说的内容..."
-                  value={script}
-                  onChange={(e) => setScript(e.target.value)}
-                  className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
-                />
+                <span className="text-amber-600 font-medium">视频已上传: {videoFile?.name}</span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-white/80 mb-2 block">语言</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10">
-                      {languages.map((lang) => (
-                        <SelectItem key={lang.id} value={lang.id}>
-                          {lang.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-white/80 mb-2 block">音色</Label>
-                  <Select value={voice} onValueChange={setVoice}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10">
-                      {voices.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:opacity-90"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    生成中，请稍候...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    生成配音视频
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {error && (
-              <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {error}
-              </div>
+            ) : (
+              <>
+                <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+                <p className="text-gray-600 mb-1">拖拽视频文件到此处，或点击上传</p>
+                <p className="text-xs text-gray-400">支持 MP4、MOV 格式</p>
+              </>
             )}
           </div>
+        </div>
 
-          {/* Results Section */}
-          {result && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">生成结果</h3>
-              <div className="aspect-video rounded-xl overflow-hidden bg-black">
-                <video
-                  src={result.videoUrl}
-                  controls
-                  className="w-full h-full"
-                >
-                  您的浏览器不支持视频播放
-                </video>
-              </div>
+        {/* Script Input */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+          <Label htmlFor="script" className="text-gray-700 mb-3 block">
+            配音文案
+          </Label>
+          <textarea
+            id="script"
+            placeholder="输入配音内容..."
+            value={script}
+            onChange={(e) => setScript(e.target.value)}
+            className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 resize-none outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-100 transition-all"
+          />
+
+          {/* Options */}
+          <div className="grid grid-cols-2 gap-4 mt-5">
+            <div>
+              <label className="text-sm text-gray-500 mb-1.5 block">语言</label>
+              <select 
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="w-full text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-2.5 outline-none cursor-pointer"
+              >
+                {languages.map((lang) => (
+                  <option key={lang.id} value={lang.id}>{lang.name}</option>
+                ))}
+              </select>
             </div>
-          )}
-
-          {/* Tips Section */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">使用说明</h3>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li className="flex items-start gap-2">
-                <span className="text-amber-400 mt-1">•</span>
-                <span>上传包含人物说话的视频，AI 会自动识别口型</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-400 mt-1">•</span>
-                <span>输入配音文案，选择语言和音色，系统将生成匹配的视频</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-400 mt-1">•</span>
-                <span>支持多种语言的配音转换，轻松实现视频本地化</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-400 mt-1">•</span>
-                <span>建议上传人物正面清晰的视频以获得最佳效果</span>
-              </li>
-            </ul>
+            <div>
+              <label className="text-sm text-gray-500 mb-1.5 block">音色</label>
+              <select 
+                value={voice}
+                onChange={(e) => setVoice(e.target.value)}
+                className="w-full text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-2.5 outline-none cursor-pointer"
+              >
+                {voices.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Generate Button */}
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              生成中，请稍候...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5" />
+              生成配音视频
+            </>
+          )}
+        </button>
+
+        {/* Results */}
+        {result && (
+          <div className="mt-8">
+            <h3 className="text-sm font-medium text-gray-500 mb-4">生成结果</h3>
+            <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-200 border border-gray-200">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-300 flex items-center justify-center">
+                    <Play className="w-8 h-8 text-gray-500" />
+                  </div>
+                  <p className="text-gray-500">配音视频生成完成</p>
+                </div>
+              </div>
+              <button className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-lg hover:bg-gray-100 transition-colors">
+                <Download className="w-4 h-4 text-gray-700" />
+                <span className="text-sm font-medium text-gray-700">下载视频</span>
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

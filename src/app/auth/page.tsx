@@ -46,47 +46,41 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-violet-500/20 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px]" />
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            返回首页
-          </Link>
-        </div>
+      <header className="h-14 px-4 flex items-center border-b border-gray-200 bg-white">
+        <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+          返回首页
+        </Link>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-md mx-auto">
+      <main className="flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm">
+          {/* Logo & Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 mb-4">
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 mb-4">
+              <Sparkles className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
               {isLogin ? '欢迎回来' : '创建账号'}
             </h1>
-            <p className="text-white/60">
+            <p className="text-gray-500">
               {isLogin ? '登录以继续使用 AI 工具箱' : '注册账号，开始您的 AI 创作之旅'}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
+          {/* Form Card */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <Tabs defaultValue="login" onValueChange={(v) => setIsLogin(v === 'login')}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login" className="flex items-center gap-2">
-                  <LogIn className="w-4 h-4" />
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
+                <TabsTrigger value="login" className="data-[state=active]:bg-white">
+                  <LogIn className="w-4 h-4 mr-2" />
                   登录
                 </TabsTrigger>
-                <TabsTrigger value="register" className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4" />
+                <TabsTrigger value="register" className="data-[state=active]:bg-white">
+                  <UserPlus className="w-4 h-4 mr-2" />
                   注册
                 </TabsTrigger>
               </TabsList>
@@ -94,7 +88,7 @@ export default function AuthPage() {
               <TabsContent value="login">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-email" className="text-white/80 mb-2 block">
+                    <Label htmlFor="login-email" className="text-gray-700 mb-2 block">
                       邮箱
                     </Label>
                     <Input
@@ -104,12 +98,12 @@ export default function AuthPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="login-password" className="text-white/80 mb-2 block">
+                    <Label htmlFor="login-password" className="text-gray-700 mb-2 block">
                       密码
                     </Label>
                     <Input
@@ -119,12 +113,12 @@ export default function AuthPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
 
                   {error && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
                       {error}
                     </div>
                   )}
@@ -132,7 +126,7 @@ export default function AuthPage() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90"
+                    className="w-full bg-gray-900 hover:bg-gray-800"
                   >
                     {loading ? (
                       <>
@@ -149,7 +143,7 @@ export default function AuthPage() {
               <TabsContent value="register">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="reg-nickname" className="text-white/80 mb-2 block">
+                    <Label htmlFor="reg-nickname" className="text-gray-700 mb-2 block">
                       昵称
                     </Label>
                     <Input
@@ -158,12 +152,12 @@ export default function AuthPage() {
                       placeholder="您的昵称（可选）"
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="reg-email" className="text-white/80 mb-2 block">
+                    <Label htmlFor="reg-email" className="text-gray-700 mb-2 block">
                       邮箱
                     </Label>
                     <Input
@@ -173,12 +167,12 @@ export default function AuthPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="reg-password" className="text-white/80 mb-2 block">
+                    <Label htmlFor="reg-password" className="text-gray-700 mb-2 block">
                       密码
                     </Label>
                     <Input
@@ -189,12 +183,12 @@ export default function AuthPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
 
                   {error && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
                       {error}
                     </div>
                   )}
@@ -202,7 +196,7 @@ export default function AuthPage() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90"
+                    className="w-full bg-gray-900 hover:bg-gray-800"
                   >
                     {loading ? (
                       <>
@@ -218,11 +212,12 @@ export default function AuthPage() {
             </Tabs>
           </div>
 
-          <p className="text-center text-sm text-white/40 mt-6">
+          {/* Switch Link */}
+          <p className="text-center text-sm text-gray-500 mt-6">
             {isLogin ? '还没有账号？' : '已有账号？'}
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-violet-400 hover:text-violet-300 ml-1"
+              className="text-violet-600 hover:text-violet-700 ml-1 font-medium"
             >
               {isLogin ? '立即注册' : '立即登录'}
             </button>

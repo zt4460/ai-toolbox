@@ -1,395 +1,280 @@
 ---
 title: AI 工具箱 - Design System
-description: 让AI变成好用的牛马 - 一站式AI创作工具箱网站设计系统
-version: 1.0.0
+description: 让AI变成好用的牛马 - 极简现代 AI 创作工具箱
+version: 2.0.0
 
 # Color Palette
 
 ## Primary Colors
-primary: "#1a1a2e"                    # Deep navy background
-primary-light: "#16213e"              # Slightly lighter navy
-primary-foreground: "#ffffff"          # White text on primary
-
-## Accent Colors
-accent-violet: "#8b5cf6"               # Violet 500 - Primary brand color
-accent-purple: "#a855f7"               # Purple 500 - Gradient partner
-accent-pink: "#ec4899"                # Pink 500 - Video tool accent
-accent-rose: "#f43f5e"                 # Rose 600 - Gradient partner
-accent-cyan: "#06b6d4"                # Cyan 500 - Digital human accent
-accent-blue: "#3b82f6"                # Blue 600 - Gradient partner
-accent-amber: "#f59e0b"               # Amber 500 - Lip-sync accent
-accent-orange: "#ea580c"               # Orange 600 - Gradient partner
+primary: "#111827"                    # Gray 900 - Main text color
+primary-light: "#374151"               # Gray 700 - Secondary emphasis
+primary-foreground: "#ffffff"           # White text on dark
 
 ## Background Colors
-background: "#000000"                  # Pure black base
-background-glass: "rgba(0,0,0,0.3)"     # Glassmorphism overlay
-surface: "rgba(255,255,255,0.05)"     # Card surfaces
-surface-hover: "rgba(255,255,255,0.1)" # Hover state surfaces
+background: "#f9fafb"                  # Gray 50 - Page background
+background-card: "#ffffff"             # White - Card surfaces
+background-input: "#f3f4f6"            # Gray 100 - Input fields
+background-hover: "#f3f4f6"            # Gray 100 - Hover state
 
 ## Text Colors
-text-primary: "#ffffff"                # White - Primary text
-text-secondary: "rgba(255,255,255,0.7)" # 70% white - Secondary text
-text-muted: "rgba(255,255,255,0.4)"    # 40% white - Muted text
-text-accent: "#8b5cf6"                 # Violet for accents
+text-primary: "#111827"                # Gray 900 - Primary text
+text-secondary: "#6b7280"               # Gray 500 - Secondary text
+text-muted: "#9ca3af"                  # Gray 400 - Muted text
+text-placeholder: "#d1d5db"            # Gray 300 - Placeholder
+
+## Border Colors
+border: "#e5e7eb"                      # Gray 200 - Default border
+border-hover: "#d1d5db"               # Gray 300 - Hover border
+border-focus: "#9ca3af"                # Gray 400 - Focus border
+
+## Tool Accent Colors
+accent-image: "#8b5cf6"                # Violet 500 - Image generation
+accent-image-bg: "#f3e8ff"             # Violet 100 - Image badge bg
+accent-video: "#ec4899"                # Pink 500 - Video generation
+accent-video-bg: "#fce7f3"             # Pink 100 - Video badge bg
+accent-digital: "#06b6d4"              # Cyan 500 - Digital human
+accent-digital-bg: "#cffafe"          # Cyan 100 - Digital badge bg
+accent-lipsync: "#f59e0b"              # Amber 500 - Lip sync
+accent-lipsync-bg: "#fef3c7"           # Amber 100 - Lip sync badge bg
 
 ## Status Colors
 success: "#10b981"                    # Emerald 500
-success-light: "#34d399"              # Emerald 400
+success-bg: "#d1fae5"                  # Emerald 100
 warning: "#f59e0b"                    # Amber 500
-warning-light: "#fbbf24"              # Amber 400
-error: "#ef4444"                      # Red 500
-error-light: "#f87171"                # Red 400
-
-## Border Colors
-border: "rgba(255,255,255,0.1)"       # Subtle borders
-border-light: "rgba(255,255,255,0.05)" # Lighter borders
+warning-bg: "#fef3c7"                  # Amber 100
+error: "#ef4444"                       # Red 500
+error-bg: "#fee2e2"                    # Red 100
+info: "#3b82f6"                       # Blue 500
+info-bg: "#dbeafe"                     # Blue 100
 
 # Typography
 
 ## Font Families
 font-sans: "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-font-mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
-font-serif: "'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif"
 
 ## Font Sizes
-text-xs: "0.75rem"      # 12px - Labels, captions
-text-sm: "0.875rem"     # 14px - Secondary text
-text-base: "1rem"       # 16px - Body text
-text-lg: "1.125rem"     # 18px - Lead text
-text-xl: "1.25rem"      # 20px - Card titles
-text-2xl: "1.5rem"      # 24px - Section headers
-text-3xl: "1.875rem"    # 30px - Page titles
-text-hero: "3rem"        # 48px - Hero headline
+text-xs: "0.75rem"                     # 12px - Muted labels
+text-sm: "0.875rem"                    # 14px - Secondary text
+text-base: "1rem"                      # 16px - Body text
+text-lg: "1.125rem"                    # 18px - Subheadings
+text-xl: "1.25rem"                     # 20px - Section titles
+text-2xl: "1.5rem"                     # 24px - Page titles
+text-3xl: "1.875rem"                   # 30px - Hero titles
+text-4xl: "2.25rem"                    # 36px - Large displays
 
 ## Font Weights
-font-normal: 400
-font-medium: 500
-font-semibold: 600
-font-bold: 700
-
-## Line Heights
-leading-tight: 1.25
-leading-normal: 1.5
-leading-relaxed: 1.75
+font-normal: "400"                     # Normal
+font-medium: "500"                     # Medium emphasis
+font-semibold: "600"                   # Semibold - Headings
+font-bold: "700"                       # Bold - Strong emphasis
 
 # Spacing System
 
-## Base Unit: 4px
+## Base Unit
+base-unit: "4px"                      # 4px grid system
 
-spacing-1: "0.25rem"    # 4px
-spacing-2: "0.5rem"     # 8px
-spacing-3: "0.75rem"    # 12px
-spacing-4: "1rem"        # 16px
-spacing-5: "1.25rem"    # 20px
-spacing-6: "1.5rem"      # 24px
-spacing-8: "2rem"        # 32px
-spacing-10: "2.5rem"    # 40px
-spacing-12: "3rem"       # 48px
-spacing-16: "4rem"       # 64px
+## Spacing Scale
+space-0: "0"                           # 0px
+space-1: "4px"                         # 4px
+space-2: "8px"                         # 8px
+space-3: "12px"                        # 12px
+space-4: "16px"                        # 16px
+space-5: "20px"                        # 20px
+space-6: "24px"                        # 24px
+space-8: "32px"                        # 32px
+space-10: "40px"                       # 40px
+space-12: "48px"                       # 48px
 
-## Container
-container-max: "1280px"
-container-padding: "1rem"  # px-4
+## Component Spacing
+header-height: "56px"                 # 14 * 4px - Header height
+sidebar-width: "280px"                 # Sidebar width
+max-width-content: "1024px"            # 1024px - Main content max width
+max-width-narrow: "640px"              # 640px - Narrow content max width
+page-padding: "16px"                    # Page horizontal padding
 
 # Border Radius
 
-radius-sm: "0.5rem"      # 8px - Small elements
-radius-md: "0.625rem"     # 10px - Default radius
-radius-lg: "0.75rem"      # 12px - Cards
-radius-xl: "1rem"         # 16px - Large cards
-radius-2xl: "1.25rem"     # 20px - Modals
-radius-3xl: "1.5rem"      # 24px - Extra large
-radius-full: "9999px"     # Pills, avatars
+## Radius Scale
+radius-none: "0"                       # No radius
+radius-sm: "6px"                       # 6px - Small elements
+radius-md: "8px"                       # 8px - Buttons
+radius-lg: "12px"                      # 12px - Cards
+radius-xl: "16px"                      # 16px - Large cards
+radius-2xl: "20px"                     # 20px - Modals
+radius-full: "9999px"                  # Full circle
 
 # Shadows
 
-shadow-none: "none"
-shadow-sm: "0 1px 2px rgba(0,0,0,0.05)"
-shadow-md: "0 4px 6px rgba(0,0,0,0.1)"
-shadow-lg: "0 10px 15px rgba(0,0,0,0.1)"
-shadow-glow-violet: "0 0 40px rgba(139,92,246,0.3)"
-shadow-glow-pink: "0 0 40px rgba(236,72,153,0.3)"
+shadow-sm: "0 1px 2px rgba(0,0,0,0.05)"           # Subtle shadow
+shadow-md: "0 4px 6px rgba(0,0,0,0.07)"           # Medium shadow
+shadow-lg: "0 10px 15px rgba(0,0,0,0.1)"          # Large shadow
+shadow-xl: "0 20px 25px rgba(0,0,0,0.1)"          # Extra large
+shadow-none: "none"                                # No shadow
 
-# Elevation
+# Transitions
 
-elevation-1: "bg-black/30 backdrop-blur-sm border-b border-white/10"
-elevation-2: "bg-white/5 backdrop-blur-sm border border-white/10"
-elevation-3: "bg-white/10 backdrop-blur-md border border-white/20"
-
-# Motion & Animation
-
-## Transitions
-transition-fast: "150ms"
-transition-normal: "200ms"
-transition-slow: "300ms"
-ease-out: "cubic-bezier(0.33, 1, 0.68, 1)"
-ease-in-out: "cubic-bezier(0.65, 0, 0.35, 1)"
-
-## Blur Effects
-blur-sm: "4px"
-blur-md: "8px"
-blur-lg: "16px"
-blur-xl: "32px"
-blur-2xl: "64px"
-blur-3xl: "128px"  # Background orbs
-
-# Component Specifications
-
-## Buttons
-
-### Primary Button
-- Background: gradient from accent-violet to accent-purple
-- Text: white, font-medium
-- Padding: px-4 py-2
-- Border radius: rounded-xl
-- Hover: opacity-90
-- Active: scale-[0.98]
-
-### Secondary Button
-- Background: bg-white/10
-- Text: white/70, hover: white
-- Border: border border-white/10
-- Hover: bg-white/20
-- Border radius: rounded-xl
-- Padding: px-4 py-2
-
-### Icon Button
-- Size: w-10 h-10
-- Background: bg-white/10
-- Border radius: rounded-xl
-- Hover: bg-white/20
-- Icon size: w-5 h-5
-
-## Cards
-
-### Tool Card
-- Background: surface color with gradient overlay
-- Border: border border-white/10
-- Border radius: rounded-2xl
-- Padding: p-6
-- Hover: bg-white/10, scale-[1.02]
-- Shadow: none (flat design)
-
-### Content Card
-- Background: surface
-- Border: border border-white/10
-- Border radius: rounded-xl
-- Padding: p-4 to p-6
-
-## Form Elements
-
-### Input
-- Background: bg-white/10
-- Border: border border-white/10
-- Border radius: rounded-lg
-- Text: white
-- Placeholder: white/40
-- Focus: ring-2 ring-violet-500/50
-
-### Textarea
-- Same as Input
-- Min height: 120px
-
-## Navigation
-
-### Header
-- Background: bg-black/30 with backdrop-blur-sm
-- Border: border-b border-white/10
-- Height: auto (py-4)
-- Sticky: yes
-
-### Nav Link
-- Text: text-sm, white/70
-- Hover: text-white
-- Transition: 200ms
-
-## Background Effects
-
-### Ambient Orbs
-- Size: 80-96 (w-80 to w-96)
-- Blur: blur-[128px]
-- Opacity: 0.2 (20%)
-- Position: absolute, various corners
-- Colors: violet, blue, pink (primary theme)
-
-### Gradient Overlays
-- Tool cards: from-{color}-500/20 to-{color}-600/20
-- Balance cards: from-amber-500/20 to-orange-500/20
+transition-fast: "150ms"              # Fast transitions
+transition-base: "200ms"              # Default transitions
+transition-slow: "300ms"              # Slow transitions
+ease-default: "cubic-bezier(0.4, 0, 0.2, 1)"
 
 ---
 
-# Design Language
+# AI 工具箱 - Design Language
 
-## Overall Aesthetic
+## Overview
 
-The AI 工具箱 design embodies a **dark, futuristic aesthetic** with glassmorphism elements and vibrant accent colors. It feels like a premium SaaS product designed for creative professionals who work with AI tools.
+采用极简现代的轻量工具风格，参考 Stitch 平台的设计语言。整体视觉呈现简洁、专业、轻量化的特点，强调功能性和高效率。
 
-The interface is **minimal yet expressive**, using color strategically to differentiate between tools while maintaining visual cohesion through the consistent dark base.
+## Design Principles
 
-## Color Strategy
+### 1. Minimalism & Clarity
+- **留白充足**: 所有区域预留大量空白，呼吸感强
+- **色彩克制**: 低饱和度莫兰迪色系，避免视觉疲劳
+- **无冗余装饰**: 依靠线条、色块的细微区分划分功能区
 
-### Why Dark Theme?
-The dark theme serves multiple purposes:
-1. Reduces eye strain during extended creative sessions
-2. Makes generated content (images, videos) stand out against the UI
-3. Creates a professional, tech-forward atmosphere
-4. Allows vibrant accent colors to pop without overwhelming
+### 2. Information Hierarchy
+- **文字层级清晰**: 通过字号、字重、颜色区分信息优先级
+- **功能分区明确**: 左侧功能栏 + 右侧主内容区
+- **渐进式披露**: 核心操作居中引导，次要信息折叠
 
-### Accent Color Mapping
-Each tool category has its own signature gradient:
-- **图片生成 (Image)**: Violet to Purple - represents creativity and imagination
-- **视频生成 (Video)**: Pink to Rose - represents dynamic motion and energy
-- **数字人 (Digital Human)**: Cyan to Blue - represents technology and futurism
-- **视频配音 (Lip-sync)**: Amber to Orange - represents warmth and human connection
+### 3. Light Theme
+- **背景色**: `#f9fafb` (Gray 50) 作为页面底色
+- **卡片色**: `#ffffff` 白色卡片悬浮于浅灰背景
+- **输入控件**: `#f3f4f6` 灰底输入框，轻量化感
 
-### Glassmorphism Implementation
-Translucent surfaces with backdrop-blur create depth without visual clutter:
-- Header: `bg-black/30 backdrop-blur-sm`
-- Cards: `bg-white/5 backdrop-blur-sm border border-white/10`
-- Modals: `bg-black/50 backdrop-blur-lg`
+### 4. Interactive Feedback
+- **Hover**: 边框颜色加深，背景微变
+- **Active**: 背景填充，颜色强调
+- **Disabled**: 透明度降低，cursor 变化
+- **Loading**: 简洁的旋转加载动画
 
-## Typography Decisions
+## Layout Structure
 
-### Chinese-First Font Stack
-The font stack prioritizes Chinese font rendering:
+### Homepage Layout
 ```
-'PingFang SC' → macOS Chinese
-'Hiragino Sans GB' → macOS Japanese/Chinese
-'Microsoft YaHei' → Windows Chinese
-```
-
-This ensures crisp, native-feeling text on all major platforms.
-
-### Hierarchy Through Size
-- Hero text (48px) for emotional impact
-- Section headers (24px) for clear navigation
-- Body text (16px) for readability
-- Labels (12-14px) for supporting information
-
-## Spacing & Rhythm
-
-### Consistent 4px Base
-All spacing follows a 4px grid, creating visual harmony:
-- Tight spacing (4-8px): within components
-- Medium spacing (16-24px): between related elements
-- Large spacing (32-48px): between sections
-
-### Card Padding
-Tool cards use 24px padding, providing enough space for content without feeling sparse.
-
-## Visual Effects
-
-### Ambient Background Orbs
-Large, blurred gradient orbs create an ethereal atmosphere:
-- Positioned in corners and edges
-- 128px blur creates soft, diffused glow
-- 20% opacity prevents overwhelming the content
-- Colors complement the primary brand palette
-
-### Gradient Borders
-Premium cards use subtle gradient borders:
-```css
-border border-amber-500/20
+┌─────────────────────────────────────────────────────────────┐
+│ Header: Logo + Navigation (积分 | 历史 | 联系我)           │
+├──────────────┬──────────────────────────────────────────────┤
+│              │                                              │
+│   Sidebar    │              Main Content                    │
+│   (280px)    │                                              │
+│              │   ┌────────────────────────────────────┐    │
+│  [生图]      │   │                                    │    │
+│  [历史记录]  │   │         Interactive Area           │    │
+│              │   │                                    │    │
+│              │   │   - 对话式交互                      │    │
+│              │   │   - 输入框 + 发送按钮               │    │
+│              │   │                                    │    │
+│              │   └────────────────────────────────────┘    │
+│              │                                              │
+└──────────────┴──────────────────────────────────────────────┘
 ```
 
-### Icon Gradient Backgrounds
-Tool cards feature icons with matching gradient backgrounds:
-```css
-bg-gradient-to-br from-violet-500 to-purple-600
-```
+### Sidebar Design
+- 固定宽度 280px
+- 顶部 Logo + Slogan
+- 底部「需求投稿」入口
+- 中间功能列表
+- 简洁分隔线区分区块
 
-## Component Patterns
+### Tool Pages Layout
+- Header + 返回按钮
+- 居中内容区 (max-width: 768px)
+- 表单卡片式布局
+- 底部操作按钮
 
-### Consistent Border Radius
-All interactive elements use rounded-xl (16px) or rounded-2xl (20px), creating a soft, approachable feel.
+## Components
 
-### Hover States
-Interactive elements use subtle brightness/opacity changes rather than dramatic transforms:
-- Buttons: `opacity-90` or `bg-white/20`
-- Cards: `bg-white/10` and slight scale
+### Cards
+- **Background**: `#ffffff`
+- **Border**: `1px solid #e5e7eb`
+- **Border Radius**: `16px` (xl)
+- **Padding**: `24px`
+- **Shadow**: none (flat design)
+- **Hover**: border-color → `#d1d5db`
 
-### Icon Wrappers
-Icons are often contained within gradient or tinted backgrounds:
-```jsx
-<div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-  <Icon className="w-5 h-5 text-violet-400" />
-</div>
-```
+### Buttons
 
-## Responsive Strategy
+#### Primary Button
+- Background: `#111827` (gray-900)
+- Text: `#ffffff`
+- Hover: `#374151` (gray-700)
+- Border Radius: `12px`
+- Height: `48px` (py-3.5)
+- Font: Medium
 
-- Mobile-first approach with `px-4` container padding
-- Grid layouts collapse from 2-4 columns on mobile to larger screens
-- Navigation remains simple (single row) on all screen sizes
-- Cards maintain readable proportions at all breakpoints
+#### Secondary Button
+- Background: `#ffffff`
+- Border: `1px solid #e5e7eb`
+- Text: `#374151`
+- Hover: `#f3f4f6`
+- Border Radius: `12px`
 
-## Interaction Design
+#### Icon Button
+- Background: `#f3f4f6`
+- Hover: `#e5e7eb`
+- Border Radius: `8px`
+- Size: `36px × 36px`
 
-### Modal/Overlay Pattern
-Contact and Mailbox modals:
-- Centered with `fixed inset-0`
-- Dark overlay `bg-black/50 backdrop-blur-lg`
-- Content in rounded-2xl container
-- Close button in top-right corner
+### Input Fields
+- Background: `#f3f4f6`
+- Border: `1px solid #e5e7eb`
+- Border Radius: `12px`
+- Focus Border: `#9ca3af`
+- Focus Ring: `ring-2 ring-gray-100`
+- Padding: `12px 16px`
 
-### Tab Navigation
-Used in auth page and history page:
-- Full-width tabs with equal distribution
-- Active state: solid background
-- Inactive state: transparent with hover effect
+### Badges
+- Border Radius: `8px`
+- Padding: `4px 8px`
+- Font Size: `12px`
+- Font Weight: Medium
+- Colored background + matching text color
 
-## Accessibility Considerations
+### Tabs
+- Underline style: `border-b-2`
+- Active: border-gray-900, text-gray-900
+- Inactive: border-transparent, text-gray-500
+- Hover: text-gray-700
 
-- Sufficient color contrast (white text on dark backgrounds)
-- Focus states via ring utilities
-- Semantic HTML structure
-- Keyboard-navigable interface
-- Loading states for async operations
+## Icons
 
----
+- **Library**: Lucide React
+- **Sizes**: 16px (inline) / 20px (buttons) / 24px (headers)
+- **Colors**: Match text color context
+- **Tool Icons**: Each tool has unique color accent
 
-# Layout Structure
+## Animations
 
-## Page Hierarchy
+- **Transitions**: 150-200ms ease
+- **Loading Spinner**: Lucide Loader2 with spin animation
+- **Page Transitions**: Fade in on mount
+- **Hover States**: 150ms color/border transitions
 
-### 1. Homepage (/)
-- Hero section with brand message
-- Tool grid (2x2 on mobile, 4x1 on desktop)
-- Mailbox trigger (floating or prominent button)
+## Responsive Design
 
-### 2. Tool Pages (/tools/*)
-- Header with back navigation
-- Input form section
-- Generation controls
-- Result preview area
+### Breakpoints
+- Mobile: < 640px
+- Tablet: 640px - 1024px
+- Desktop: > 1024px
 
-### 3. User Pages (/credits, /history)
-- Consistent header with back button
-- Content cards in vertical stack
-- Action buttons within cards
+### Mobile Adaptations
+- Sidebar becomes bottom navigation or hamburger menu
+- Single column layout
+- Full-width cards
 
-### 4. Auth Page (/auth)
-- Centered card layout
-- Tab switching between login/register
-- Minimal distractions
+## Accessibility
 
----
+- **Color Contrast**: Minimum 4.5:1 for text
+- **Focus States**: Visible focus rings
+- **Screen Reader**: Proper ARIA labels
+- **Keyboard Navigation**: Full tab support
 
-# Icon System
+## Future Considerations
 
-Uses **Lucide React** icon library with consistent sizing:
-- Navigation icons: 16px (w-4 h-4)
-- Action icons: 20px (w-5 h-5)
-- Display icons: 24-48px (w-6 h-6 to w-12 h-12)
-
-Icon colors follow the accent color of their context.
-
----
-
-# Future Considerations
-
-- Dark/Light mode toggle (currently dark-only)
-- Custom scrollbar styling
-- Skeleton loading states for content
-- Toast notifications for actions
-- Tooltip documentation for power users
+- [ ] Dark mode support
+- [ ] Skeleton loading states
+- [ ] Toast notifications
+- [ ] Tooltip documentation
+- [ ] Empty state illustrations

@@ -2,357 +2,405 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from './providers';
+import Image from 'next/image';
 import { 
-  ImageIcon, 
-  VideoIcon, 
-  UserIcon, 
-  Mail,
-  Sparkles,
-  Coins,
-  User,
-  LogIn,
-  Mailbox,
-  X,
+  Wand2,
   History,
+  Sparkles,
+  Download,
+  Copy,
   ChevronRight,
-  Clock,
-  Zap
+  ImageIcon,
+  VideoIcon,
+  UserIcon,
+  Mail,
+  X,
+  MessageSquare,
+  Send,
+  Coins,
+  Settings,
+  LogOut
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-const tools = [
-  {
-    id: 'image',
-    name: '图片生成',
-    description: '输入文字描述，AI 帮你生成精美图片',
-    icon: ImageIcon,
-    href: '/tools/image',
-    color: 'from-violet-500 to-purple-600',
-    bgColor: 'bg-violet-500/10',
-    cost: 10,
-  },
-  {
-    id: 'video',
-    name: '视频生成',
-    description: '文字转视频，图片生视频',
-    icon: VideoIcon,
-    href: '/tools/video',
-    color: 'from-pink-500 to-rose-600',
-    bgColor: 'bg-pink-500/10',
-    cost: 50,
-  },
-  {
-    id: 'digital-human',
-    name: '数字人',
-    description: '创建逼真的 AI 数字人形象',
-    icon: UserIcon,
-    href: '/tools/digital-human',
-    color: 'from-cyan-500 to-blue-600',
-    bgColor: 'bg-cyan-500/10',
-    cost: 30,
-  },
-  {
-    id: 'lip-sync',
-    name: '视频配音',
-    description: '上传视频，AI 自动对口型',
-    icon: Mail,
-    href: '/tools/lip-sync',
-    color: 'from-amber-500 to-orange-600',
-    bgColor: 'bg-amber-500/10',
-    cost: 20,
-  },
-];
+type TabType = 'create' | 'history';
+type CreateTab = 'image' | 'video' | 'digital-human' | 'lip-sync';
 
 // 模拟历史记录数据
 const mockHistory = [
-  { id: 1, type: 'image', name: '日落海边风景', time: '10分钟前', status: '完成' },
-  { id: 2, type: 'video', name: '科技风开场动画', time: '30分钟前', status: '完成' },
-  { id: 3, type: 'image', name: '未来城市概念图', time: '1小时前', status: '完成' },
-  { id: 4, type: 'digital-human', name: '产品介绍视频', time: '2小时前', status: '完成' },
+  { 
+    id: 1, 
+    type: 'image', 
+    name: '日落海边风景', 
+    prompt: 'A beautiful sunset over the ocean with golden clouds',
+    time: '2024-01-15 14:30', 
+    status: '完成',
+    thumbnail: ''
+  },
+  { 
+    id: 2, 
+    type: 'video', 
+    name: '科技风开场动画', 
+    prompt: 'Futuristic tech animation with neon lights',
+    time: '2024-01-15 14:00', 
+    status: '完成',
+    thumbnail: ''
+  },
+  { 
+    id: 3, 
+    type: 'image', 
+    name: '未来城市概念图', 
+    prompt: 'Futuristic city with flying cars and tall skyscrapers',
+    time: '2024-01-15 13:30', 
+    status: '完成',
+    thumbnail: ''
+  },
+  { 
+    id: 4, 
+    type: 'digital-human', 
+    name: '产品介绍视频', 
+    prompt: 'Professional female presenter introducing new product',
+    time: '2024-01-14 16:00', 
+    status: '完成',
+    thumbnail: ''
+  },
+  { 
+    id: 5, 
+    type: 'lip-sync', 
+    name: '英文产品演示', 
+    prompt: 'English product demonstration with natural lip sync',
+    time: '2024-01-14 10:00', 
+    status: '完成',
+    thumbnail: ''
+  },
 ];
 
-export default function HomePage() {
-  const { user, loading } = useAuth();
-  const [showContact, setShowContact] = useState(false);
-  const [showMailbox, setShowMailbox] = useState(false);
+const createTabs = [
+  { id: 'image' as const, label: '图片生成', icon: ImageIcon, color: 'violet' },
+  { id: 'video' as const, label: '视频生成', icon: VideoIcon, color: 'pink' },
+  { id: 'digital-human' as const, label: '数字人', icon: UserIcon, color: 'cyan' },
+  { id: 'lip-sync' as const, label: '视频配音', icon: Mail, color: 'amber' },
+];
 
-  const getToolIcon = (type: string) => {
-    const tool = tools.find(t => t.id === type);
-    return tool?.icon || ImageIcon;
+const getTypeColor = (type: string) => {
+  switch (type) {
+    case 'image': return { bg: 'bg-violet-100', text: 'text-violet-600', border: 'border-violet-200' };
+    case 'video': return { bg: 'bg-pink-100', text: 'text-pink-600', border: 'border-pink-200' };
+    case 'digital-human': return { bg: 'bg-cyan-100', text: 'text-cyan-600', border: 'border-cyan-200' };
+    case 'lip-sync': return { bg: 'bg-amber-100', text: 'text-amber-600', border: 'border-amber-200' };
+    default: return { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200' };
+  }
+};
+
+const getTypeIcon = (type: string) => {
+  switch (type) {
+    case 'image': return ImageIcon;
+    case 'video': return VideoIcon;
+    case 'digital-human': return UserIcon;
+    case 'lip-sync': return Mail;
+    default: return ImageIcon;
+  }
+};
+
+export default function HomePage() {
+  const [activeTab, setActiveTab] = useState<TabType>('create');
+  const [createSubTab, setCreateSubTab] = useState<CreateTab>('image');
+  const [prompt, setPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    setGenerating(true);
+    // 模拟生成过程
+    setTimeout(() => {
+      setGeneratedImages([
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800'
+      ]);
+      setGenerating(false);
+    }, 2000);
   };
 
   return (
-    <div className="relative min-h-screen">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-violet-500/20 rounded-full blur-[128px]" />
-        <div className="absolute top-1/3 -right-20 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-pink-500/20 rounded-full blur-[128px]" />
-      </div>
-
-      {/* Header */}
-      <header className="border-b border-white/10 backdrop-blur-sm bg-black/30">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 左侧功能栏 */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        {/* Logo */}
+        <div className="h-14 px-4 flex items-center border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">AI 工具箱</span>
+            <span className="font-semibold text-gray-900">AI 工具箱</span>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/credits" className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
-              <Coins className="w-4 h-4" />
-              积分
-            </Link>
-            <Link href="/history" className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
+        </div>
+
+        {/* 导航标签 */}
+        <div className="px-3 py-3 border-b border-gray-100">
+          <div className="flex rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={() => setActiveTab('create')}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'create' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Wand2 className="w-4 h-4" />
+              生图
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'history' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
               <History className="w-4 h-4" />
               历史
-            </Link>
-            <button 
-              onClick={() => setShowContact(true)}
-              className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
-            >
-              <Mail className="w-4 h-4" />
-              联系我
             </button>
-          </nav>
-          <div className="flex items-center gap-3">
-            {!loading && (
-              <>
-                {user ? (
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+          </div>
+        </div>
+
+        {/* 功能列表 */}
+        <div className="flex-1 overflow-y-auto py-3 px-3">
+          {activeTab === 'create' ? (
+            <div className="space-y-1">
+              <p className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">选择工具</p>
+              {createTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = createSubTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setCreateSubTab(tab.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                      isActive 
+                        ? 'bg-gray-100 text-gray-900' 
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      isActive ? 'bg-white shadow-sm' : 'bg-gray-100'
+                    }`}>
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-violet-600' : 'text-gray-500'}`} />
                     </div>
-                    <div className="hidden sm:block text-left">
-                      <p className="text-sm text-white font-medium">{user.nickname || '用户'}</p>
-                      <p className="text-xs text-white/60 flex items-center gap-1">
-                        <Coins className="w-3 h-3 text-amber-400" />
-                        {user.credits} 积分
-                      </p>
-                    </div>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/auth"
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity"
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">最近记录</p>
+              {mockHistory.slice(0, 5).map((item) => {
+                const Icon = getTypeIcon(item.type);
+                const colors = getTypeColor(item.type);
+                return (
+                  <button
+                    key={item.id}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
                   >
-                    <LogIn className="w-4 h-4" />
-                    登录
-                  </Link>
-                )}
-              </>
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <div className="flex-1 text-left truncate">{item.name}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* 底部用户信息 */}
+        <div className="p-3 border-t border-gray-100">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm">
+              U
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">用户名</p>
+              <p className="text-xs text-gray-500">100 积分</p>
+            </div>
+            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* 右侧主内容区 */}
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* 顶部导航 */}
+        <header className="h-14 px-6 flex items-center justify-between border-b border-gray-200 bg-white">
+          <div className="flex items-center gap-4">
+            {activeTab === 'create' ? (
+              <h1 className="text-lg font-semibold text-gray-900">
+                {createTabs.find(t => t.id === createSubTab)?.label || '创建'}
+              </h1>
+            ) : (
+              <h1 className="text-lg font-semibold text-gray-900">生成历史</h1>
             )}
           </div>
-        </div>
-      </header>
-
-      {/* Hero Section - 简化版 */}
-      <section className="container mx-auto px-4 py-16 md:py-24 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
-          让<span className="bg-gradient-to-r from-violet-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">AI</span>变成好用的牛马
-        </h1>
-      </section>
-
-      {/* Tools Grid */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tools.map((tool) => (
-            <Link
-              key={tool.id}
-              href={tool.href}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 hover:bg-white/10 transition-all duration-300"
+          <div className="flex items-center gap-2">
+            <Link 
+              href="/credits"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-              <div className={`w-14 h-14 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                <tool.icon className={`w-7 h-7 bg-gradient-to-br ${tool.color} bg-clip-text`} />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">{tool.name}</h3>
-              <p className="text-sm text-white/60 leading-relaxed">{tool.description}</p>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-white/40">{tool.cost}积分/次</span>
-                <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
-              </div>
+              <Coins className="w-4 h-4" />
+              <span>积分</span>
             </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* 信箱入口 */}
-      <section className="container mx-auto px-4 pb-16">
-        <button
-          onClick={() => setShowMailbox(true)}
-          className="w-full max-w-md mx-auto flex items-center gap-4 p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group"
-        >
-          <div className="w-14 h-14 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Mailbox className="w-7 h-7 text-emerald-400" />
-          </div>
-          <div className="text-left flex-1">
-            <h3 className="text-lg font-semibold text-white mb-1">需求信箱</h3>
-            <p className="text-sm text-white/60">有好的想法？写信告诉我们</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
-        </button>
-      </section>
-
-      {/* 快捷入口卡片 */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link
-            href="/credits"
-            className="flex items-center gap-4 p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all"
-          >
-            <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Coins className="w-6 h-6 text-amber-400" />
-            </div>
-            <div className="text-left flex-1">
-              <h3 className="text-white font-medium">积分充值</h3>
-              <p className="text-xs text-white/60">当前余额 {user?.credits || 0} 积分</p>
-            </div>
-          </Link>
-          
-          <Link
-            href="/history"
-            className="flex items-center gap-4 p-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 transition-all"
-          >
-            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-              <History className="w-6 h-6 text-blue-400" />
-            </div>
-            <div className="text-left flex-1">
-              <h3 className="text-white font-medium">生成历史</h3>
-              <p className="text-xs text-white/60">查看历史创作记录</p>
-            </div>
-          </Link>
-
-          <button
-            onClick={() => setShowContact(true)}
-            className="flex items-center gap-4 p-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 transition-all w-full text-left"
-          >
-            <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-              <Mail className="w-6 h-6 text-violet-400" />
-            </div>
-            <div className="text-left flex-1">
-              <h3 className="text-white font-medium">联系我们</h3>
-              <p className="text-xs text-white/60">商务合作与技术支持</p>
-            </div>
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-white/40">
-          <p>AI 工具箱 - 让 AI 变成好用的牛马</p>
-        </div>
-      </footer>
-
-      {/* 联系我弹窗 */}
-      {showContact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-white/10 p-6 relative">
-            <button
-              onClick={() => setShowContact(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-            >
-              <X className="w-4 h-4 text-white/70" />
+            <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+              <MessageSquare className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold text-white mb-6">联系我们</h2>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5">
-                <Mail className="w-5 h-5 text-violet-400" />
-                <div>
-                  <p className="text-sm text-white/60">邮箱</p>
-                  <p className="text-white">contact@example.com</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5">
-                <Zap className="w-5 h-5 text-amber-400" />
-                <div>
-                  <p className="text-sm text-white/60">微信</p>
-                  <p className="text-white">AI_Tools2024</p>
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
+        </header>
 
-      {/* 信箱弹窗 */}
-      {showMailbox && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl bg-slate-900 border border-white/10 p-6 relative max-h-[80vh] overflow-y-auto">
-            <button
-              onClick={() => setShowMailbox(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-            >
-              <X className="w-4 h-4 text-white/70" />
-            </button>
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <Mailbox className="w-6 h-6 text-emerald-400" />
-              需求信箱
-            </h2>
-            <div className="space-y-6">
-              {/* 写信表单 */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">标题</label>
-                  <input
-                    type="text"
-                    placeholder="简要描述你的需求"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">类型</label>
-                  <select className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-violet-500/50">
-                    <option value="feature">新功能建议</option>
-                    <option value="improvement">功能优化</option>
-                    <option value="bug">问题反馈</option>
-                    <option value="other">其他</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">详细内容</label>
-                  <textarea
-                    rows={4}
-                    placeholder="详细描述你的想法..."
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 resize-none"
-                  />
-                </div>
-                <button className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity">
-                  发送信件
-                </button>
+        {/* 内容区 */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'create' ? (
+            /* 生图模式 */
+            <div className="max-w-2xl mx-auto px-6 py-12">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                  {createTabs.find(t => t.id === createSubTab)?.label || '创作'}
+                </h2>
+                <p className="text-gray-500">描述你的想法，AI 将为你创作</p>
               </div>
-              
-              {/* 我的投稿历史 */}
-              <div className="pt-6 border-t border-white/10">
-                <h3 className="text-sm text-white/60 mb-4">我的投递历史</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                    <div className="w-2 h-2 rounded-full bg-amber-500" />
-                    <div className="flex-1">
-                      <p className="text-sm text-white">添加视频时长选择功能</p>
-                      <p className="text-xs text-white/40">审核中</p>
+
+              {/* 提示词输入 */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="输入你的创作描述..."
+                  className="w-full h-32 text-gray-900 placeholder-gray-400 bg-transparent resize-none outline-none text-base"
+                />
+                
+                {/* 选项栏 */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">尺寸:</span>
+                      <select className="text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-1.5 outline-none cursor-pointer">
+                        <option>1:1 (方形)</option>
+                        <option>16:9 (横版)</option>
+                        <option>9:16 (竖版)</option>
+                      </select>
                     </div>
-                    <span className="text-xs text-white/30">2天前</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">数量:</span>
+                      <select className="text-sm text-gray-700 bg-gray-100 rounded-lg px-3 py-1.5 outline-none cursor-pointer">
+                        <option>1 张</option>
+                        <option>2 张</option>
+                        <option>4 张</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <div className="flex-1">
-                      <p className="text-sm text-white">增加更多数字人形象</p>
-                      <p className="text-xs text-white/40">已采纳</p>
-                    </div>
-                    <span className="text-xs text-white/30">1周前</span>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim() || generating}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {generating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        开始生成
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 生成结果 */}
+              {generatedImages.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-sm font-medium text-gray-500 mb-4">生成结果</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {generatedImages.map((url, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+                        <Image src={url} alt={`生成图片 ${idx + 1}`} fill className="object-cover" />
+                        <div className="absolute bottom-3 right-3 flex gap-2">
+                          <button className="p-2 bg-white/90 rounded-lg hover:bg-white transition-colors shadow-sm">
+                            <Download className="w-4 h-4 text-gray-700" />
+                          </button>
+                          <button className="p-2 bg-white/90 rounded-lg hover:bg-white transition-colors shadow-sm">
+                            <Copy className="w-4 h-4 text-gray-700" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
+            </div>
+          ) : (
+            /* 历史模式 */
+            <div className="max-w-3xl mx-auto px-6 py-12">
+              <div className="text-center mb-10">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">生成历史</h2>
+                <p className="text-gray-500">记录你的每一次创作</p>
+              </div>
+
+              {/* 时间轴 */}
+              <div className="relative">
+                {/* 时间轴线 */}
+                <div className="absolute left-6 top-0 bottom-0 w-px bg-gray-200" />
+
+                {/* 历史记录 */}
+                <div className="space-y-6">
+                  {mockHistory.map((item, idx) => {
+                    const Icon = getTypeIcon(item.type);
+                    const colors = getTypeColor(item.type);
+                    const isLast = idx === mockHistory.length - 1;
+                    
+                    return (
+                      <div key={item.id} className="relative pl-14">
+                        {/* 时间轴节点 */}
+                        <div className={`absolute left-3 w-6 h-6 rounded-full ${colors.bg} border-2 border-white flex items-center justify-center`}>
+                          <Icon className={`w-3 h-3 ${colors.text}`} />
+                        </div>
+
+                        {/* 卡片 */}
+                        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}>
+                                  {item.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 line-clamp-1 mb-2">{item.prompt}</p>
+                              <p className="text-xs text-gray-400">{item.time}</p>
+                            </div>
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+                                <Download className="w-4 h-4" />
+                              </button>
+                              <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </main>
     </div>
   );
 }

@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, UserIcon, Sparkles, Loader2, Upload, MessageSquare } from 'lucide-react';
+import { ArrowLeft, UserIcon, Sparkles, Loader2, Upload, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 
 export default function DigitalHumanPage() {
   const [template, setTemplate] = useState('default');
@@ -51,7 +50,6 @@ export default function DigitalHumanPage() {
 
     setIsGenerating(true);
     setError('');
-    setResult(null);
 
     try {
       const response = await fetch('/api/digital-human/generate', {
@@ -75,171 +73,145 @@ export default function DigitalHumanPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px]" />
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            返回首页
-          </Link>
-          <div className="flex items-center gap-3 ml-auto">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <UserIcon className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">数字人</span>
+      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
+        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </Link>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
+            <UserIcon className="w-4 h-4 text-cyan-600" />
           </div>
+          <span className="font-semibold text-gray-900">数字人</span>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Template Selection */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mb-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white">选择数字人形象</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {templates.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTemplate(t.id)}
-                  className={`p-4 rounded-xl border text-center transition-all ${
-                    template === t.id
-                      ? 'border-cyan-500 bg-cyan-500/20'
-                      : 'border-white/10 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                    <UserIcon className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-sm font-medium text-white">{t.name}</p>
-                  <p className="text-xs text-white/50">{t.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI 数字人</h1>
+          <p className="text-gray-500">选择形象，输入文案，生成数字人视频</p>
+        </div>
 
-          {/* Input Section */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mb-6">
-            <div className="flex items-center gap-2 mb-6">
-              <MessageSquare className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white">输入内容</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="script" className="text-white/80 mb-2 block">
-                  文案脚本
-                </Label>
-                <Textarea
-                  id="script"
-                  placeholder="输入你想让数字人说的内容..."
-                  value={script}
-                  onChange={(e) => setScript(e.target.value)}
-                  className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
-                />
-              </div>
-
-              <div>
-                <Label className="text-white/80 mb-2 block">或上传音频</Label>
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                  onDragLeave={() => setDragActive(false)}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                    dragActive
-                      ? 'border-cyan-500 bg-cyan-500/10'
-                      : 'border-white/10 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-white/40" />
-                  <p className="text-sm text-white/60 mb-2">拖拽音频文件到此处，或点击选择</p>
-                  <Input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="audio-upload"
-                  />
-                  <Label htmlFor="audio-upload" className="cursor-pointer">
-                    <span className="text-cyan-400 hover:text-cyan-300">选择文件</span>
-                  </Label>
-                  {audioUrl && (
-                    <p className="mt-2 text-sm text-green-400">音频已上传</p>
-                  )}
-                </div>
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:opacity-90"
+        {/* Template Selection */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+          <Label className="text-gray-700 mb-3 block">选择数字人形象</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {templates.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTemplate(t.id)}
+                className={`p-4 rounded-xl border text-left transition-all ${
+                  template === t.id
+                    ? 'border-cyan-300 bg-cyan-50'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
               >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    生成中，请稍候...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    生成数字人视频
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {error && (
-              <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-          </div>
-
-          {/* Results Section */}
-          {result && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">生成结果</h3>
-              <div className="aspect-video rounded-xl overflow-hidden bg-black">
-                <video
-                  src={result.videoUrl}
-                  controls
-                  className="w-full h-full"
-                >
-                  您的浏览器不支持视频播放
-                </video>
-              </div>
-            </div>
-          )}
-
-          {/* Tips Section */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">使用说明</h3>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li className="flex items-start gap-2">
-                <span className="text-cyan-400 mt-1">•</span>
-                <span>选择合适的数字人形象，或上传你的定制形象</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-cyan-400 mt-1">•</span>
-                <span>输入文案后，系统会自动生成匹配的口型和动作</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-cyan-400 mt-1">•</span>
-                <span>支持上传自定义音频，获得更自然的配音效果</span>
-              </li>
-            </ul>
+                <div className="w-12 h-12 rounded-full bg-gray-200 mb-2 flex items-center justify-center">
+                  <UserIcon className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="font-medium text-gray-900 text-sm">{t.name}</p>
+                <p className="text-xs text-gray-500">{t.description}</p>
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Script Input */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+          <Label htmlFor="script" className="text-gray-700 mb-3 block">
+            输入文案
+          </Label>
+          <textarea
+            id="script"
+            placeholder="输入你要数字人说的内容..."
+            value={script}
+            onChange={(e) => setScript(e.target.value)}
+            className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 resize-none outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100 transition-all"
+          />
+        </div>
+
+        {/* Audio Upload */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+          <Label className="text-gray-700 mb-3 block">或上传配音音频</Label>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+              dragActive
+                ? 'border-cyan-400 bg-cyan-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => document.getElementById('audio-upload')?.click()}
+          >
+            <input
+              id="audio-upload"
+              type="file"
+              accept="audio/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            {audioUrl ? (
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center">
+                  <Play className="w-5 h-5 text-cyan-600" />
+                </div>
+                <span className="text-cyan-600 font-medium">音频已上传</span>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+                <p className="text-gray-600 mb-1">拖拽音频文件到此处，或点击上传</p>
+                <p className="text-xs text-gray-400">支持 MP3、WAV 格式</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Generate Button */}
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              生成中，请稍候...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5" />
+              生成数字人视频
+            </>
+          )}
+        </button>
+
+        {/* Results */}
+        {result && (
+          <div className="mt-8">
+            <h3 className="text-sm font-medium text-gray-500 mb-4">生成结果</h3>
+            <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-200 border border-gray-200">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-300 flex items-center justify-center">
+                    <UserIcon className="w-8 h-8 text-gray-500" />
+                  </div>
+                  <p className="text-gray-500">数字人视频生成完成</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -3,359 +3,284 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/providers';
-import {
-  ArrowLeft,
-  Coins,
-  Key,
-  History,
-  LogOut,
-  Loader2,
-  Check,
-  Sparkles,
-  User,
-  ArrowRightLeft,
+import { 
+  ArrowLeft, 
+  UserIcon, 
+  LogOutIcon, 
+  CoinsIcon,
+  TicketIcon,
+  HistoryIcon,
+  Loader2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-
-interface Transaction {
-  id: string;
-  type: string;
-  amount: number;
-  balance_before: number;
-  balance_after: number;
-  source: string;
-  description: string;
-  created_at: string;
-}
+import { useAuth } from '../providers';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, loading: authLoading, logout, refreshUser } = useAuth();
-
+  const { user, loading, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState('profile');
+  const [credits, setCredits] = useState(0);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [activationCode, setActivationCode] = useState('');
   const [activating, setActivating] = useState(false);
-  const [activationError, setActivationError] = useState('');
-  const [activationSuccess, setActivationSuccess] = useState('');
+  const [message, setMessage] = useState({ type: '', text: '' });
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
-
-  // 认证检查
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!loading && !user) {
       router.push('/auth');
     }
-  }, [user, authLoading, router]);
-
-  // 获取积分记录
-  const fetchTransactions = async () => {
-    if (!user) return;
-
-    setLoadingTransactions(true);
-    try {
-      const response = await fetch('/api/credits/history');
-      const data = await response.json();
-
-      if (data.success) {
-        setTransactions(data.transactions);
-      }
-    } catch (error) {
-      console.error('获取积分记录失败:', error);
-    } finally {
-      setLoadingTransactions(false);
-    }
-  };
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (user) {
+      fetchCredits();
       fetchTransactions();
     }
   }, [user]);
 
-  // 激活卡密
-  const handleActivate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchCredits = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.user) {
+        setCredits(data.user.credits || 0);
+      }
+    } catch (error) {
+      console.error('获取积分失败:', error);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const res = await fetch('/api/credits/history');
+      const data = await res.json();
+      if (data.transactions) {
+        setTransactions(data.transactions);
+      }
+    } catch (error) {
+      console.error('获取交易记录失败:', error);
+    }
+  };
+
+  const handleActivate = async () => {
     if (!activationCode.trim()) {
-      setActivationError('请输入卡密');
+      setMessage({ type: 'error', text: '请输入卡密' });
       return;
     }
 
     setActivating(true);
-    setActivationError('');
-    setActivationSuccess('');
+    setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch('/api/credits/activate', {
+      const res = await fetch('/api/credits/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: activationCode }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (data.success) {
-        setActivationSuccess(`激活成功！获得 ${data.addedPoints} 积分`);
-        setActivationCode('');
-        await refreshUser();
-        fetchTransactions();
-      } else {
-        setActivationError(data.error);
+      if (!res.ok) {
+        throw new Error(data.error || '激活失败');
       }
-    } catch (error) {
-      setActivationError('激活失败，请重试');
+
+      setMessage({ type: 'success', text: '激活成功！' });
+      setActivationCode('');
+      fetchCredits();
+      fetchTransactions();
+    } catch (err) {
+      setMessage({ 
+        type: 'error', 
+        text: err instanceof Error ? err.message : '激活失败' 
+      });
     } finally {
       setActivating(false);
     }
   };
 
-  // 退出登录
   const handleLogout = async () => {
     await logout();
     router.push('/');
-    router.refresh();
   };
 
-  if (authLoading || !user) {
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'recharge':
+      case 'activation':
+        return <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+          <CoinsIcon className="w-4 h-4 text-green-600" />
+        </div>;
+      case 'consume':
+        return <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+          <CoinsIcon className="w-4 h-4 text-red-600" />
+        </div>;
+      case 'refund':
+        return <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+          <CoinsIcon className="w-4 h-4 text-blue-600" />
+        </div>;
+      default:
+        return <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+          <CoinsIcon className="w-4 h-4 text-gray-600" />
+        </div>;
+    }
+  };
+
+  if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Background Effects */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-violet-500/20 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px]" />
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            返回首页
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-              <User className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">个人中心</span>
-          </div>
-        </div>
+      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
+        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </Link>
+        <span className="font-semibold text-gray-900">个人中心</span>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          {/* User Info Card */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mb-6">
-            <div className="flex items-center justify-between">
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="flex gap-8">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'profile'
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              个人信息
+            </button>
+            <button
+              onClick={() => setActiveTab('credits')}
+              className={`py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'credits'
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              积分管理
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        {activeTab === 'profile' && (
+          <div className="space-y-6">
+            {/* Avatar & Name */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {user.nickname?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
-                  </span>
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                  <UserIcon className="w-8 h-8 text-gray-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-white">
-                    {user.nickname || '用户'}
-                  </h2>
-                  <p className="text-white/60 text-sm">{user.email}</p>
+                  <h2 className="text-xl font-semibold text-gray-900">{user.nickname || user.email}</h2>
+                  <p className="text-gray-500 text-sm">{user.email}</p>
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-2 text-2xl font-bold text-amber-400">
-                  <Coins className="w-6 h-6" />
-                  {user.credits}
-                </div>
-                <p className="text-white/40 text-sm">我的积分</p>
               </div>
             </div>
+
+            {/* Account Info */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">账户信息</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">邮箱</span>
+                  <span className="text-gray-900">{user.email}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">积分余额</span>
+                  <span className="text-gray-900 font-medium">{credits} 积分</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">注册时间</span>
+                  <span className="text-gray-900">{new Date(user.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+            >
+              <LogOutIcon className="w-5 h-5" />
+              退出登录
+            </button>
           </div>
+        )}
 
-          {/* Tabs */}
-          <Tabs defaultValue="activate" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="activate" className="flex items-center gap-2">
-                <Key className="w-4 h-4" />
-                激活卡密
-              </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
-                <History className="w-4 h-4" />
-                积分记录
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                账号设置
-              </TabsTrigger>
-            </TabsList>
-
-            {/* 激活卡密 */}
-            <TabsContent value="activate">
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-semibold text-white">激活卡密</h3>
-                </div>
-
-                <form onSubmit={handleActivate} className="space-y-4">
-                  <div>
-                    <Label htmlFor="activation-code" className="text-white/80 mb-2 block">
-                      卡密
-                    </Label>
-                    <Input
-                      id="activation-code"
-                      type="text"
-                      placeholder="请输入卡密"
-                      value={activationCode}
-                      onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 text-lg tracking-wider font-mono"
-                    />
-                  </div>
-
-                  {activationError && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                      {activationError}
-                    </div>
-                  )}
-
-                  {activationSuccess && (
-                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      {activationSuccess}
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={activating}
-                    className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:opacity-90"
-                  >
-                    {activating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        激活中...
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRightLeft className="w-4 h-4 mr-2" />
-                        激活
-                      </>
-                    )}
-                  </Button>
-                </form>
-
-                <div className="mt-6 p-4 rounded-xl bg-white/5">
-                  <h4 className="text-sm font-medium text-white mb-2">卡密类型说明</h4>
-                  <ul className="text-sm text-white/60 space-y-1">
-                    <li>• 积分卡：直接充值对应积分到账户</li>
-                    <li>• 月卡/季卡/年卡：开通对应时长的会员权限</li>
-                  </ul>
+        {activeTab === 'credits' && (
+          <div className="space-y-6">
+            {/* Balance Card */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-600">当前积分</span>
+                <div className="flex items-center gap-2">
+                  <CoinsIcon className="w-5 h-5 text-amber-500" />
+                  <span className="text-2xl font-bold text-gray-900">{credits}</span>
                 </div>
               </div>
-            </TabsContent>
+            </div>
 
-            {/* 积分记录 */}
-            <TabsContent value="history">
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <History className="w-5 h-5 text-violet-400" />
-                  <h3 className="text-lg font-semibold text-white">积分记录</h3>
-                </div>
+            {/* Activation */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">卡密激活</h3>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  placeholder="请输入卡密"
+                  value={activationCode}
+                  onChange={(e) => setActivationCode(e.target.value)}
+                  className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 outline-none focus:border-gray-400 transition-colors"
+                />
+                <button
+                  onClick={handleActivate}
+                  disabled={activating}
+                  className="px-6 py-2.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                >
+                  {activating ? <Loader2 className="w-5 h-5 animate-spin" /> : '激活'}
+                </button>
+              </div>
+              {message.text && (
+                <p className={`mt-3 text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                  {message.text}
+                </p>
+              )}
+            </div>
 
-                {loadingTransactions ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
-                  </div>
-                ) : transactions.length === 0 ? (
-                  <div className="text-center py-8 text-white/40">
-                    暂无积分记录
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-white/5"
-                      >
-                        <div>
-                          <p className="text-white font-medium">{tx.description || getTransactionTypeName(tx.type)}</p>
-                          <p className="text-white/40 text-sm">
-                            {new Date(tx.created_at).toLocaleString('zh-CN')}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {tx.amount > 0 ? '+' : ''}{tx.amount}
-                          </p>
-                          <p className="text-white/40 text-sm">
-                            余额: {tx.balance_after}
-                          </p>
-                        </div>
+            {/* Transaction History */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">积分明细</h3>
+              {transactions.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">暂无积分记录</p>
+              ) : (
+                <div className="space-y-3">
+                  {transactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+                      {getTransactionIcon(tx.type)}
+                      <div className="flex-1">
+                        <p className="text-gray-900 text-sm">{tx.description}</p>
+                        <p className="text-gray-400 text-xs">{new Date(tx.created_at).toLocaleString()}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* 账号设置 */}
-            <TabsContent value="settings">
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-                <h3 className="text-lg font-semibold text-white mb-6">账号设置</h3>
-
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-white/5">
-                    <Label className="text-white/60 text-sm">邮箱</Label>
-                    <p className="text-white mt-1">{user.email}</p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-white/5">
-                    <Label className="text-white/60 text-sm">昵称</Label>
-                    <p className="text-white mt-1">{user.nickname || '未设置'}</p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-white/5">
-                    <Label className="text-white/60 text-sm">注册时间</Label>
-                    <p className="text-white mt-1">
-                      {new Date(user.created_at).toLocaleString('zh-CN')}
-                    </p>
-                  </div>
+                      <span className={`font-medium ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {tx.amount > 0 ? '+' : ''}{tx.amount}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    退出登录
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
-}
-
-function getTransactionTypeName(type: string): string {
-  const typeMap: Record<string, string> = {
-    recharge: '积分充值',
-    consume: '积分消费',
-    refund: '退款',
-    activation: '卡密激活',
-  };
-  return typeMap[type] || type;
 }
