@@ -35,19 +35,31 @@ export async function POST(request: NextRequest) {
     const isPhone = /^1[3-9]\d{9}$/.test(identifier);
     const username = isEmail ? null : isPhone ? null : identifier;
 
-    // 验证验证码
-    const { data: codeRecord, error: codeError } = await client
-      .from('verification_codes')
-      .select('*')
-      .eq('code', code)
-      .eq('identifier', identifier)
-      .eq('is_used', false)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (codeError) {
-      throw new Error(codeError.message);
+    // 验证验证码 - 根据账号类型查询对应字段
+    let codeRecord = null;
+    
+    if (isEmail) {
+      const result = await client
+        .from('verification_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('email', identifier)
+        .eq('is_used', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      codeRecord = result.data;
+    } else if (isPhone) {
+      const result = await client
+        .from('verification_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('phone', identifier)
+        .eq('is_used', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      codeRecord = result.data;
     }
 
     if (!codeRecord) {
@@ -124,7 +136,6 @@ export async function POST(request: NextRequest) {
     // 处理激活码
     let bonusCredits = 0;
     if (activationCode) {
-      // 验证激活码
       const { data: codeRecord, error: codeError } = await client
         .from('activation_codes')
         .select('*')
@@ -133,18 +144,15 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (codeRecord && !codeError) {
-        // 检查是否过期
         if (!codeRecord.expires_at || new Date(codeRecord.expires_at) > new Date()) {
           bonusCredits = codeRecord.credits || 0;
           
-          // 更新用户积分
           if (bonusCredits > 0) {
             await client
               .from('users')
               .update({ credits: bonusCredits })
               .eq('id', newUser.id);
 
-            // 标记激活码已使用
             await client
               .from('activation_codes')
               .update({ 
@@ -154,7 +162,6 @@ export async function POST(request: NextRequest) {
               })
               .eq('id', codeRecord.id);
 
-            // 创建积分变动记录
             await client
               .from('credit_transactions')
               .insert({
@@ -170,7 +177,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 获取更新后的用户信息
     const { data: updatedUser } = await client
       .from('users')
       .select('id, username, email, phone, nickname, credits, created_at')
