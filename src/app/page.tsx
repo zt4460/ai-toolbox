@@ -582,7 +582,7 @@ export default function HomePage() {
                     whitebgImage 
                       ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`}>
+                  }`} onClick={() => document.getElementById('whitebg-input')?.click()}>
                     {whitebgImage ? (
                       <div className="relative w-full h-40">
                         <Image src={whitebgImage} alt="预览" fill className="object-contain" />
@@ -594,10 +594,11 @@ export default function HomePage() {
                       </>
                     )}
                     <input
+                      id="whitebg-input"
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleImageUpload(e, setWhitebgImage)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      className="hidden"
                     />
                   </div>
                 </div>
@@ -648,7 +649,7 @@ export default function HomePage() {
                         fashionProductImage 
                           ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
                           : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`}>
+                      }`} onClick={() => document.getElementById('fashion-product-input')?.click()}>
                         {fashionProductImage ? (
                           <div className="relative w-full h-28">
                             <Image src={fashionProductImage} alt="产品图" fill className="object-contain" />
@@ -660,10 +661,11 @@ export default function HomePage() {
                           </>
                         )}
                         <input
+                          id="fashion-product-input"
                           type="file"
                           accept="image/*"
                           onChange={(e) => handleImageUpload(e, setFashionProductImage)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          className="hidden"
                         />
                       </div>
                     </div>
@@ -675,7 +677,7 @@ export default function HomePage() {
                         fashionProductRef 
                           ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
                           : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`}>
+                      }`} onClick={() => document.getElementById('fashion-product-ref-upload')?.click()}>
                         {fashionProductRef ? (
                           <div className="relative w-full h-28">
                             <Image src={fashionProductRef} alt="参考图" fill className="object-contain" />
@@ -687,10 +689,11 @@ export default function HomePage() {
                           </>
                         )}
                         <input
+                          id="fashion-product-ref-upload"
                           type="file"
                           accept="image/*"
                           onChange={(e) => handleImageUpload(e, setFashionProductRef)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          className="hidden"
                         />
                       </div>
                     </div>
@@ -708,7 +711,7 @@ export default function HomePage() {
                         fashionModelImage 
                           ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
                           : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`}>
+                      }`} onClick={() => document.getElementById('fashion-model-upload')?.click()}>
                         {fashionModelImage ? (
                           <div className="relative w-full h-28">
                             <Image src={fashionModelImage} alt="模特图" fill className="object-contain" />
@@ -720,10 +723,11 @@ export default function HomePage() {
                           </>
                         )}
                         <input
+                          id="fashion-model-upload"
                           type="file"
                           accept="image/*"
                           onChange={(e) => handleImageUpload(e, setFashionModelImage)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          className="hidden"
                         />
                       </div>
                     </div>
@@ -735,7 +739,7 @@ export default function HomePage() {
                         fashionModelRef 
                           ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
                           : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`}>
+                      }`} onClick={() => document.getElementById('fashion-model-ref-upload')?.click()}>
                         {fashionModelRef ? (
                           <div className="relative w-full h-28">
                             <Image src={fashionModelRef} alt="参考图" fill className="object-contain" />
@@ -747,10 +751,11 @@ export default function HomePage() {
                           </>
                         )}
                         <input
+                          id="fashion-model-ref-upload"
                           type="file"
                           accept="image/*"
                           onChange={(e) => handleImageUpload(e, setFashionModelRef)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          className="hidden"
                         />
                       </div>
                     </div>
