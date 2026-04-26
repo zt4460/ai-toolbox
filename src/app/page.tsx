@@ -452,49 +452,79 @@ export default function HomePage() {
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
                 {showRatioSelect && (
-                  <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl z-20 p-4">
-                    <div className="text-xs text-gray-400 mb-3">图片比例</div>
-                    <div className="flex gap-4">
+                  <div 
+                    className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 shadow-[0_2px_8px_rgba(240,240,240,0.8)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3)] z-20 px-3 py-3"
+                    style={{ width: '320px' }}
+                  >
+                    <div className="text-sm font-normal mb-4" style={{ color: '#333333' }}>图片比例</div>
+                    <div className="flex" style={{ gap: '12px' }}>
                       {RATIOS.map((ratio) => {
                         const isSelected = selectedRatio.id === ratio.id;
-                        // 计算矩形尺寸，最大宽度28px，最大高度28px
-                        const maxSize = 28;
-                        const aspectRatio = ratio.width / ratio.height;
-                        let boxWidth, boxHeight;
-                        if (aspectRatio >= 1) {
-                          boxWidth = maxSize;
-                          boxHeight = Math.round(maxSize / aspectRatio);
-                        } else {
-                          boxHeight = maxSize;
-                          boxWidth = Math.round(maxSize * aspectRatio);
-                        }
+                        // 根据比例计算图标尺寸
+                        // 1:1: 40x40, 9:16: 20x40, 16:9: 40x22.5, 2:3: 26.7x40, 3:2: 40x26.7
+                        const iconSizes: Record<string, {w: number, h: number}> = {
+                          '1:1': {w: 40, h: 40},
+                          '9:16': {w: 20, h: 40},
+                          '16:9': {w: 40, h: 22.5},
+                          '2:3': {w: 26.7, h: 40},
+                          '3:2': {w: 40, h: 26.7},
+                        };
+                        const size = iconSizes[ratio.name] || {w: 40, h: 40};
                         return (
                           <button
                             key={ratio.id}
                             onClick={() => { setSelectedRatio(ratio); setShowRatioSelect(false); }}
-                            className="flex flex-col items-center gap-2"
+                            className="flex flex-col items-center"
+                            style={{ width: '60px' }}
                           >
                             <div 
-                              className={`${
-                                isSelected 
-                                  ? 'bg-gray-800 dark:bg-gray-600 ring-2 ring-gray-300 dark:ring-gray-500 ring-offset-2 dark:ring-offset-gray-800 rounded-2xl' 
-                                  : 'bg-transparent border-2 border-gray-300 dark:border-gray-600 rounded-lg'
-                              } flex items-center justify-center`}
+                              className="flex items-center justify-center"
                               style={{ 
-                                width: `${maxSize + (isSelected ? 8 : 0)}px`, 
-                                height: `${maxSize + (isSelected ? 8 : 0)}px` 
+                                width: '60px', 
+                                height: '60px',
+                                ...(isSelected 
+                                  ? { 
+                                      backgroundColor: '#E3F2FD', 
+                                      border: '2px solid #2196F3', 
+                                      borderRadius: '4px' 
+                                    } 
+                                  : { 
+                                      border: '1px solid #E0E0E0', 
+                                      borderRadius: '2px' 
+                                    }
+                                )
                               }}
                             >
-                              <div 
-                                className={`${
-                                  isSelected 
-                                    ? 'bg-gray-600 dark:bg-gray-400' 
-                                    : 'bg-transparent border-2 border-gray-300 dark:border-gray-500'
-                                } rounded-md`}
-                                style={{ width: boxWidth, height: boxHeight }}
-                              />
+                              {isSelected ? (
+                                // 选中状态：中心黑色正方形
+                                <div 
+                                  style={{ 
+                                    width: '24px', 
+                                    height: '24px', 
+                                    backgroundColor: '#333333', 
+                                    borderRadius: '2px' 
+                                  }} 
+                                />
+                              ) : (
+                                // 未选中状态：空心矩形
+                                <div 
+                                  style={{ 
+                                    width: size.w, 
+                                    height: size.h, 
+                                    border: '1px solid #E0E0E0', 
+                                    borderRadius: '2px',
+                                    backgroundColor: 'transparent' 
+                                  }} 
+                                />
+                              )}
                             </div>
-                            <span className={`text-xs ${isSelected ? 'text-gray-800 dark:text-white font-medium' : 'text-gray-400'}`}>
+                            <span 
+                              className="mt-1 text-xs"
+                              style={{ 
+                                color: isSelected ? '#2196F3' : '#666666',
+                                fontWeight: isSelected ? 500 : 400
+                              }}
+                            >
                               {ratio.name}
                             </span>
                           </button>
