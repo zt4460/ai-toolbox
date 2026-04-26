@@ -24,6 +24,7 @@ export default function AuthPage() {
   // 注册表单
   const [regIdentifier, setRegIdentifier] = useState('');
   const [regCode, setRegCode] = useState('');
+  const [regActivationCode, setRegActivationCode] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   
@@ -120,7 +121,12 @@ export default function AuthPage() {
       if (activeTab === 'login') {
         result = await login(loginIdentifier, loginPassword);
       } else {
-        result = await register(regIdentifier, regCode, regPassword);
+        if (!regActivationCode) {
+          setError('请输入激活码');
+          setLoading(false);
+          return;
+        }
+        result = await register(regIdentifier, regCode, regPassword, regActivationCode);
       }
 
       if (result.success) {
@@ -291,6 +297,22 @@ export default function AuthPage() {
                         {countdown > 0 ? '' : !codeSent ? '获取验证码' : '已发送'}
                       </Button>
                     </div>
+                  </div>
+
+                  {/* 激活码 */}
+                  <div>
+                    <Label htmlFor="reg-activation-code" className="text-gray-700 mb-2 block">
+                      激活码 <span className="text-gray-400 text-sm">(必填)</span>
+                    </Label>
+                    <Input
+                      id="reg-activation-code"
+                      type="text"
+                      placeholder="请输入激活码"
+                      value={regActivationCode}
+                      onChange={(e) => setRegActivationCode(e.target.value)}
+                      required
+                      className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
+                    />
                   </div>
 
                   {/* 密码 */}

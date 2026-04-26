@@ -175,9 +175,17 @@ export default function HomePage() {
 
   // 获取积分历史
   const fetchCreditHistory = useCallback(async () => {
+    if (!user) {
+      setCreditHistory([]);
+      return;
+    }
     setCreditLoading(true);
     try {
       const res = await fetch(`/api/credits/history?type=${creditTab}`);
+      if (res.status === 401) {
+        setCreditHistory([]);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setCreditHistory(data.transactions || []);
@@ -187,7 +195,7 @@ export default function HomePage() {
     } finally {
       setCreditLoading(false);
     }
-  }, [creditTab]);
+  }, [creditTab, user]);
 
   useEffect(() => {
     if (showCredits) {

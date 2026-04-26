@@ -5,11 +5,18 @@ import bcrypt from 'bcryptjs';
 // 注册
 export async function POST(request: NextRequest) {
   try {
-    const { identifier, password, code } = await request.json();
+    const { identifier, password, code, activationCode } = await request.json();
 
     if (!identifier || !password || !code) {
       return NextResponse.json(
         { error: '账号、验证码和密码不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (!activationCode) {
+      return NextResponse.json(
+        { error: '请输入激活码' },
         { status: 400 }
       );
     }
@@ -91,7 +98,6 @@ export async function POST(request: NextRequest) {
     // 创建用户
     const insertData: Record<string, string | number> = {
       password_hash: passwordHash,
-      credits: 100, // 新用户赠送100积分
     };
 
     if (isEmail) {
@@ -115,10 +121,66 @@ export async function POST(request: NextRequest) {
       throw new Error(insertError.message);
     }
 
+    // 处理激活码
+    let bonusCredits = 0;
+    if (activationCode) {
+      // 验证激活码
+      const { data: codeRecord, error: codeError } = await client
+        .from('activation_codes')
+        .select('*')
+        .eq('code', activationCode)
+        .eq('is_used', false)
+        .maybeSingle();
+
+      if (codeRecord && !codeError) {
+        // 检查是否过期
+        if (!codeRecord.expires_at || new Date(codeRecord.expires_at) > new Date()) {
+          bonusCredits = codeRecord.credits || 0;
+          
+          // 更新用户积分
+          if (bonusCredits > 0) {
+            await client
+              .from('users')
+              .update({ credits: bonusCredits })
+              .eq('id', newUser.id);
+
+            // 标记激活码已使用
+            await client
+              .from('activation_codes')
+              .update({ 
+                is_used: true, 
+                used_by: newUser.id, 
+                used_at: new Date().toISOString() 
+              })
+              .eq('id', codeRecord.id);
+
+            // 创建积分变动记录
+            await client
+              .from('credit_transactions')
+              .insert({
+                user_id: newUser.id,
+                type: 'activation',
+                amount: bonusCredits,
+                balance_before: 0,
+                balance_after: bonusCredits,
+                description: `激活码 ${activationCode} 激活`
+              });
+          }
+        }
+      }
+    }
+
+    // 获取更新后的用户信息
+    const { data: updatedUser } = await client
+      .from('users')
+      .select('id, username, email, phone, nickname, credits, created_at')
+      .eq('id', newUser.id)
+      .single();
+
     return NextResponse.json({
       success: true,
-      user: newUser,
-      message: '注册成功',
+      user: updatedUser,
+      message: bonusCredits > 0 ? `注册成功，获得${bonusCredits}积分` : '注册成功',
     });
   } catch (error) {
     console.error('注册错误:', error);

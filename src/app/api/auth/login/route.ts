@@ -6,23 +6,33 @@ import { cookies } from 'next/headers';
 // 登录
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { identifier, password } = await request.json();
 
-    if (!email || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: '邮箱和密码不能为空' },
+        { error: '账号和密码不能为空' },
         { status: 400 }
       );
     }
 
     const client = getSupabaseClient();
 
+    // 判断账号类型
+    const isEmail = identifier.includes('@');
+    const isPhone = /^1[3-9]\d{9}$/.test(identifier);
+
     // 查询用户
-    const { data: user, error } = await client
-      .from('users')
-      .select('id, email, password_hash, nickname, avatar_url, credits, is_active, created_at')
-      .eq('email', email)
-      .maybeSingle();
+    let query = client.from('users').select('id, username, email, phone, password_hash, nickname, avatar_url, credits, is_active, created_at');
+    
+    if (isEmail) {
+      query = query.eq('email', identifier);
+    } else if (isPhone) {
+      query = query.eq('phone', identifier);
+    } else {
+      query = query.eq('username', identifier);
+    }
+
+    const { data: user, error } = await query.maybeSingle();
 
     if (error) {
       throw new Error(error.message);
