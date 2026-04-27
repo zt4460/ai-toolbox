@@ -1,15 +1,10 @@
 {
-  "name": "ai-toolbox",
-  "version": "1.0.0",
+  "name": "projects",
+  "version": "0.1.0",
   "private": true,
-  "main": "electron/main.js",
-  "description": "一站式AI创作工具箱",
   "scripts": {
-    "dev": "bash ./scripts/dev.sh",
-    "dev:electron": "concurrently \"pnpm dev\" \"wait-on http://localhost:5000 && electron .\"",
     "build": "bash ./scripts/build.sh",
-    "build:electron": "pnpm build && electron-builder --win --dir",
-    "build:electron:pkg": "pnpm build && electron-builder --win",
+    "dev": "bash ./scripts/dev.sh",
     "preinstall": "npx only-allow pnpm",
     "lint": "eslint",
     "start": "bash ./scripts/start.sh",
@@ -90,66 +85,18 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "concurrently": "^9.2.1",
-    "electron": "^41.3.0",
-    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "only-allow": "^1.2.2",
     "react-dev-inspector": "^2.0.1",
     "shadcn": "latest",
-    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
-    "typescript": "^5",
-    "wait-on": "^9.0.5"
+    "typescript": "^5"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "pnpm": ">=9.0.0"
-  },
-  "build": {
-    "appId": "com.ai-toolbox.app",
-    "productName": "AI工具箱",
-    "copyright": "Copyright © 2024",
-    "directories": {
-      "output": "dist-electron",
-      "buildResources": "electron/build"
-    },
-    "files": [
-      "electron/**/*",
-      ".next/**/*",
-      "!.next/cache/**/*"
-    ],
-    "extraMetadata": {
-      "main": "electron/main.js"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "electron/build/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "installerLanguages": [
-        "zh_CN",
-        "en_US"
-      ],
-      "language": "2052"
-    },
-    "asar": true,
-    "asarUnpack": [
-      "node_modules/bcryptjs/**/*"
-    ]
   }
 }
