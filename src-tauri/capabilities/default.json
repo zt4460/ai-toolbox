@@ -13,10 +13,6 @@
     "core:window:allow-maximize",
     "core:window:allow-unmaximize",
     "core:window:allow-set-fullscreen",
-    "core:window:allow-is-maximized",
-    "shell:allow-open",
-    "dialog:allow-open",
-    "dialog:allow-save",
-    "fs:default"
+    "core:window:allow-is-maximized"
   ]
 }

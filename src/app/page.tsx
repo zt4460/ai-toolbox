@@ -1,1179 +1,163 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Wand2,
-  FolderOpen,
-  Search,
-  Sparkles,
-  Upload,
-  X,
-  Send,
-  Coins,
-  Sun,
-  Moon,
-  ChevronDown,
-  Copy,
-  Check,
-  Loader2,
-  User,
-  Globe,
-  Image as ImageIcon,
-  Shirt,
-  Camera,
-  MessageCircle,
-  Download
-} from 'lucide-react';
+import { AlertCircle, CheckCircle, RotateCcw, Send } from 'lucide-react';
 import { useAuth } from './providers';
-
-// 积分配置
-const CREDIT_CONFIG = {
-  baseCost: 1,
-  resolutionMultipliers: {
-    '1K': 1,
-    '2K': 2,
-    '4K': 4,
-  },
-  ratioMultipliers: {
-    '1:1': 1,
-    '16:9': 1.2,
-    '9:16': 1.2,
-    '4:3': 1.1,
-  },
-};
-
-// 大模型配置
-const MODELS = [
-  { id: 'std', name: '标准版', description: '稳定生成，适合日常场景' },
-  { id: 'pro', name: '专业版', description: '高质量生成，适合复杂场景' },
-  { id: 'hd', name: '高清版', description: '最高质量，适合精细需求' },
-];
-
-// 分辨率配置
-const RESOLUTIONS = [
-  { id: '1K', name: '1K', size: '1024×1024', cost: 1 },
-  { id: '2K', name: '2K', size: '2048×2048', cost: 2 },
-  { id: '4K', name: '4K', size: '4096×4096', cost: 4 },
-];
-
-// 比例配置
-const RATIOS = [
-  { id: '1:1', name: '1:1', description: '方形', width: 1, height: 1 },
-  { id: '9:16', name: '9:16', description: '竖版', width: 9, height: 16 },
-  { id: '16:9', name: '16:9', description: '横版', width: 16, height: 9 },
-  { id: '2:3', name: '2:3', description: '竖版', width: 2, height: 3 },
-  { id: '3:2', name: '3:2', description: '横版', width: 3, height: 2 },
-];
-
-// 电商灵感配置
-const LANGUAGES = [
-  { id: 'zh', name: '中文' },
-  { id: 'en', name: '英文' },
-  { id: 'ja', name: '日文' },
-  { id: 'ko', name: '韩文' },
-];
-
-const COUNTRIES = [
-  { id: 'cn', name: '中国' },
-  { id: 'us', name: '美国' },
-  { id: 'jp', name: '日本' },
-  { id: 'kr', name: '韩国' },
-  { id: 'eu', name: '欧洲' },
-];
-
-const PLATFORMS = [
-  { id: 'taobao', name: '淘宝' },
-  { id: 'jd', name: '京东' },
-  { id: 'pdd', name: '拼多多' },
-  { id: 'tmall', name: '天猫' },
-  { id: 'amazon', name: '亚马逊' },
-  { id: 'shopify', name: 'Shopify' },
-];
-
-const IMAGE_TYPES = [
-  { id: 'main', name: '主图' },
-  { id: 'detail', name: '材质细节图' },
-  { id: 'scene', name: '使用场景图' },
-  { id: 'feature', name: '卖点展示图' },
-  { id: 'model', name: '模特展示图' },
-  { id: 'package', name: '包装展示图' },
-];
-
-// 电商专用功能类型
-type EcommerceTab = 'whitebg' | 'fashion' | 'ecommerce';
-type FashionMode = 'product' | 'model';
+import { WorkbenchHeader } from '@/features/image-workbench/components/workbench-header';
+import { PromptPanel } from '@/features/image-workbench/components/prompt-panel';
+import { GenerationControls } from '@/features/image-workbench/components/generation-controls';
+import { ReferenceImageUpload } from '@/features/image-workbench/components/reference-image-upload';
+import { ResultGallery } from '@/features/image-workbench/components/result-gallery';
+import { PresetSelector } from '@/features/image-workbench/components/preset-selector';
+import { useImageGeneration } from '@/features/image-workbench/hooks/use-image-generation';
+import { IMAGE_PRESETS } from '@/features/image-workbench/presets';
+import { getUserDisplayName } from '@/features/auth/display-name';
 
 export default function HomePage() {
-  const { user } = useAuth();
   const router = useRouter();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCredits, setShowCredits] = useState(false);
-  const [showCustomerService, setShowCustomerService] = useState(false);
-  const [showModelSelect, setShowModelSelect] = useState(false);
-  const [showInspiration, setShowInspiration] = useState(false);
-  const [showRatioSelect, setShowRatioSelect] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const ratioRef = useRef<HTMLDivElement>(null);
-  
-  // 积分余额弹窗状态
-  const [creditTab, setCreditTab] = useState<'all' | 'recharge' | 'consume' | 'gift'>('all');
-  const [creditHistory, setCreditHistory] = useState<Array<{
-    id: string;
-    type: string;
-    amount: number;
-    balance_after: number;
-    description: string;
-    created_at: string;
-  }>>([]);
-  const [creditLoading, setCreditLoading] = useState(false);
-  
-  // 创作设置状态
-  const [prompt, setPrompt] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
-  const [selectedResolution, setSelectedResolution] = useState(RESOLUTIONS[0]);
-  const [selectedRatio, setSelectedRatio] = useState(RATIOS[0]);
-  const [imageCount, setImageCount] = useState(1);
-  const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const referenceInputRef = useRef<HTMLInputElement>(null);
-  const [generatedImages, setGeneratedImages] = useState<Array<{id: string; url: string; prompt: string; time: string}>>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { user, refreshUser } = useAuth();
+  const {
+    selectedPreset,
+    setSelectedPreset,
+    selectedPresetDefinition,
+    prompt,
+    setPrompt,
+    resolution,
+    setResolution,
+    ratio,
+    setRatio,
+    referenceImage,
+    setReferenceImage,
+    generatedImages,
+    isGenerating,
+    error,
+    successMessage,
+    insufficientCredits,
+    creditsCost,
+    generateImage,
+    resetGeneration,
+    presetPlaceholder,
+    supportsReferenceImage,
+  } = useImageGeneration(refreshUser, user?.credits);
 
-  // 电商灵感设置
-  const [ecomTab, setEcomTab] = useState<EcommerceTab>('whitebg');
-  const [fashionMode, setFashionMode] = useState<FashionMode>('product');
-  const [ecomLanguage, setEcomLanguage] = useState(LANGUAGES[0]);
-  const [ecomPlatform, setEcomPlatform] = useState(PLATFORMS[0]);
-  const [ecomImageTypes, setEcomImageTypes] = useState<string[]>(['main']);
-  
-  // 高清白底图
-  const [whitebgImage, setWhitebgImage] = useState<string | null>(null);
-  
-  // 服饰赛道
-  const [fashionProductImage, setFashionProductImage] = useState<string | null>(null);
-  const [fashionProductRef, setFashionProductRef] = useState<string | null>(null);
-  const [fashionModelImage, setFashionModelImage] = useState<string | null>(null);
-  const [fashionModelRef, setFashionModelRef] = useState<string | null>(null);
-
-  // 模拟积分余额 - 使用 useMemo 避免重复计算
-  const credits = useMemo(() => user?.credits ?? 200, [user?.credits]);
-
-  // 计算消耗积分 - 使用 useMemo 缓存结果
-  const cost = useMemo(() => {
-    const resolutionCost = CREDIT_CONFIG.resolutionMultipliers[selectedResolution.id as keyof typeof CREDIT_CONFIG.resolutionMultipliers] || 1;
-    const ratioCost = CREDIT_CONFIG.ratioMultipliers[selectedRatio.id as keyof typeof CREDIT_CONFIG.ratioMultipliers] || 1;
-    return Math.round(CREDIT_CONFIG.baseCost * resolutionCost * ratioCost * imageCount);
-  }, [selectedResolution.id, selectedRatio.id, imageCount]);
-
-  // 切换深色/浅色模式
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
-  // 点击外部关闭弹出层
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ratioRef.current && !ratioRef.current.contains(event.target as Node)) {
-        setShowRatioSelect(false);
-      }
-      if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
-        setShowModelSelect(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // 获取积分历史
-  const fetchCreditHistory = useCallback(async () => {
-    if (!user) {
-      setCreditHistory([]);
-      return;
-    }
-    setCreditLoading(true);
-    try {
-      const res = await fetch(`/api/credits/history?type=${creditTab}`);
-      if (res.status === 401) {
-        setCreditHistory([]);
-        return;
-      }
-      const data = await res.json();
-      if (data.success) {
-        setCreditHistory(data.transactions || []);
-      }
-    } catch (error) {
-      console.error('获取积分历史失败:', error);
-    } finally {
-      setCreditLoading(false);
-    }
-  }, [creditTab, user]);
-
-  useEffect(() => {
-    if (showCredits) {
-      fetchCreditHistory();
-    }
-  }, [showCredits, creditTab, fetchCreditHistory]);
-
-  // 生成图片 - 使用 useCallback 避免重复创建
-  const handleGenerate = useCallback(async () => {
-    if (!prompt.trim()) return;
-    
-    setIsCreating(true);
-    
-    // 模拟生成过程
-    setTimeout(() => {
-      const newImages = Array.from({ length: imageCount }, (_, i) => ({
-        id: `img-${Date.now()}-${i}`,
-        url: `https://picsum.photos/seed/${Date.now() + i}/512/512`,
-        prompt: prompt,
-        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      }));
-      setGeneratedImages(prev => [...newImages, ...prev]);
-      setIsCreating(false);
-    }, 2000);
-  }, [prompt, imageCount]);
-
-  // 复制提示词 - 使用 useCallback
-  const handleCopy = useCallback(async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  }, []);
-
-  // 下载图片 - 使用 useCallback
-  const handleDownload = useCallback(async (url: string, id: string) => {
+  const handleDownload = async (url: string, id: string) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `AI创作_${id.slice(0, 8)}.png`;
+      link.download = `ai-toolbox-${id}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch {
-      // 降级：直接打开新窗口
       window.open(url, '_blank');
     }
-  }, []);
-
-  // 处理电商灵感 - 使用 useCallback
-  const handleInspiration = useCallback(() => {
-    const typeNames = IMAGE_TYPES
-      .filter(t => ecomImageTypes.includes(t.id))
-      .map(t => t.name)
-      .join('、');
-    
-    const inspiration = `${ecomPlatform.name}电商${typeNames}，${ecomLanguage.name}文案风格`;
-    setPrompt(inspiration);
-    setShowInspiration(false);
-  }, [ecomImageTypes, ecomPlatform, ecomLanguage]);
-
-  // 切换图片功能选择 - 使用 useCallback
-  const toggleImageType = useCallback((id: string) => {
-    setEcomImageTypes(prev => 
-      prev.includes(id) 
-        ? prev.filter(t => t !== id)
-        : [...prev, id]
-    );
-  }, []);
-
-  // 处理图片上传预览 - 使用 useCallback
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, setter: (url: string | null) => void) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setter(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, []);
+  };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] dark:bg-gray-900 flex">
-      {/* 左侧极窄侧边栏 - 固定不动 */}
-      <aside className="w-14 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 shrink-0">
-        {/* 顶部导航 */}
-        <div className="flex flex-col gap-3">
-          <button
-            className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-            title="创作"
-          >
-            <Wand2 className="w-6 h-6" />
-          </button>
-          <Link
-            href="/assets"
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            title="资产"
-          >
-            <FolderOpen className="w-6 h-6" />
-          </Link>
-        </div>
-        
-        {/* 底部功能区 */}
-        <div className="mt-auto flex flex-col gap-3">
-          {/* 积分显示 */}
-          <button 
-            onClick={() => setShowCredits(true)}
-            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            aria-label="积分余额"
-          >
-            <Coins className="w-6 h-6" />
-            <span className="text-[9px] mt-0.5">{credits}</span>
-          </button>
-          
-          {/* 主题切换 */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            aria-label={isDarkMode ? '切换到浅色模式' : '切换到深色模式'}
-          >
-            {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-          </button>
-
-          {/* 联系客服 */}
-          <button
-            onClick={() => setShowCustomerService(true)}
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200"
-            aria-label="联系客服"
-          >
-            <MessageCircle className="w-6 h-6" />
-          </button>
-        </div>
-      </aside>
-
-      {/* 主内容区 */}
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* 顶部工具栏 - 固定不动 */}
-        <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">让AI变成好用的牛马</h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {/* 搜索框 */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="搜索创作记录..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-72 h-11 pl-11 pr-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:border-gray-300 dark:focus:border-gray-500 transition-colors duration-200 text-gray-900 dark:text-white placeholder-gray-400"
-              />
-            </div>
-            
-            {/* 用户头像 */}
-            <button 
-              onClick={() => user ? router.push('/profile') : router.push('/auth')}
-              className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium hover:opacity-90 transition-opacity"
-            >
-              {user?.nickname?.[0]?.toUpperCase() || 'U'}
-            </button>
-          </div>
-        </header>
-
-        {/* 内容区域 - 可滚动 */}
-        <div 
-          ref={contentRef}
-          className="flex-1 overflow-y-auto pb-80"
-        >
-          <div className="max-w-3xl mx-auto px-6 py-8">
-            {generatedImages.length === 0 ? (
-              /* 空白状态 */
-              <div className="flex flex-col items-center justify-center py-24">
-                <div className="w-24 h-24 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-6">
-                  <Wand2 className="w-12 h-12 text-gray-300 dark:text-gray-600" />
-                </div>
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">开始你的创作</h2>
-                <p className="text-gray-500 dark:text-gray-400">在下方描述你想要生成的内容</p>
-              </div>
-            ) : (
-              /* 生成结果网格 */
-              <div className="space-y-6">
-                {generatedImages.map((img) => (
-                  <div key={img.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="aspect-square relative bg-gray-100 dark:bg-gray-700">
-                      <Image src={img.url} alt={img.prompt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
-                    </div>
-                    <div className="p-5">
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{img.prompt}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs rounded-full">{selectedResolution.name}</span>
-                          <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">{selectedRatio.id}</span>
-                          <span className="text-xs text-gray-400">{img.time}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleDownload(img.url, img.id)}
-                            className="flex items-center gap-1.5 px-4 py-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm transition-colors"
-                          >
-                            <Download className="w-4 h-4" />
-                            下载
-                          </button>
-                          <button 
-                            onClick={() => handleCopy(img.prompt, img.id)}
-                            className="flex items-center gap-1.5 px-4 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm transition-colors"
-                          >
-                            {copiedId === img.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            {copiedId === img.id ? '已复制' : '复制'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 底部悬浮创作面板 - 固定在底部 */}
-        <div className="fixed bottom-6 left-[72px] right-6 max-w-3xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-5">
-            {/* 功能设置行 */}
-            <div className="flex items-center gap-3 mb-4 flex-wrap">
-              {/* 参考图上传 */}
-              <button 
-                onClick={() => document.getElementById('main-reference-upload')?.click()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                <Upload className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {referenceImage ? '已上传' : '参考图'}
-                </span>
-              </button>
-
-              {/* 大模型选择 */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowModelSelect(!showModelSelect)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <span className="text-sm text-gray-600 dark:text-gray-300">{selectedModel.name}</span>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
-                {showModelSelect && (
-                  <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden z-20 min-w-52">
-                    {MODELS.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => { setSelectedModel(model); setShowModelSelect(false); }}
-                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                          selectedModel.id === model.id ? 'bg-gray-50 dark:bg-gray-700' : ''
-                        }`}
-                      >
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{model.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{model.description}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* 分辨率选择 */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                {RESOLUTIONS.map((res) => (
-                  <button
-                    key={res.id}
-                    onClick={() => setSelectedResolution(res)}
-                    className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                      selectedResolution.id === res.id 
-                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                    }`}
-                  >
-                    {res.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* 比例选择 */}
-              <div className="relative" ref={ratioRef}>
-                <button 
-                  onClick={() => setShowRatioSelect(!showRatioSelect)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <div className="w-5 h-5 relative">
-                    {selectedRatio.id === '1:1' && (
-                      <div className="absolute inset-0 m-auto w-4 h-4 border-2 border-gray-500 rounded-sm" />
-                    )}
-                    {selectedRatio.id === '9:16' && (
-                      <div className="absolute inset-0 m-auto w-2.5 h-4 border-2 border-gray-500 rounded-sm" />
-                    )}
-                    {selectedRatio.id === '16:9' && (
-                      <div className="absolute inset-0 m-auto w-4 h-2.5 border-2 border-gray-500 rounded-sm" />
-                    )}
-                    {selectedRatio.id === '2:3' && (
-                      <div className="absolute inset-0 m-auto w-3 h-4 border-2 border-gray-500 rounded-sm" />
-                    )}
-                    {selectedRatio.id === '3:2' && (
-                      <div className="absolute inset-0 m-auto w-4 h-3 border-2 border-gray-500 rounded-sm" />
-                    )}
-                  </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">{selectedRatio.name}</span>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
-                {showRatioSelect && (
-                  <div 
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl z-20 p-4"
-                    style={{ width: '340px' }}
-                  >
-                    <div className="text-sm font-medium text-gray-900 dark:text-white mb-4">选择图片比例</div>
-                    <div className="grid grid-cols-5 gap-3">
-                      {RATIOS.map((ratio) => {
-                        const isSelected = selectedRatio.id === ratio.id;
-                        return (
-                          <button
-                            key={ratio.id}
-                            onClick={() => { setSelectedRatio(ratio); setShowRatioSelect(false); }}
-                            className={`flex flex-col items-center p-3 rounded-xl transition-all ${
-                              isSelected 
-                                ? 'bg-blue-50 dark:bg-blue-900/30' 
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }`}
-                          >
-                            <div className="w-12 h-12 flex items-center justify-center">
-                              {ratio.id === '1:1' && (
-                                <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-colors ${
-                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                                }`}>
-                                  {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
-                                </div>
-                              )}
-                              {ratio.id === '9:16' && (
-                                <div className={`h-9 w-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                                }`}>
-                                  {isSelected && <div className="w-1 h-2 bg-white rounded-sm" />}
-                                </div>
-                              )}
-                              {ratio.id === '16:9' && (
-                                <div className={`w-9 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                                }`}>
-                                  {isSelected && <div className="w-2 h-1 bg-white rounded-sm" />}
-                                </div>
-                              )}
-                              {ratio.id === '2:3' && (
-                                <div className={`h-9 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
-                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                                }`}>
-                                  {isSelected && <div className="w-1.5 h-2 bg-white rounded-sm" />}
-                                </div>
-                              )}
-                              {ratio.id === '3:2' && (
-                                <div className={`w-9 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
-                                  isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
-                                }`}>
-                                  {isSelected && <div className="w-2 h-1.5 bg-white rounded-sm" />}
-                                </div>
-                              )}
-                            </div>
-                            <span 
-                              className={`mt-2 text-sm font-medium transition-colors ${
-                                isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-                              }`}
-                            >
-                              {ratio.name}
-                            </span>
-                            <span className="text-xs text-gray-400 mt-0.5">{ratio.description}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 张数选择 */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <span className="text-sm text-gray-500 dark:text-gray-400">张数</span>
-                <div className="flex items-center gap-1.5">
-                  <button 
-                    onClick={() => setImageCount(Math.max(1, imageCount - 1))}
-                    className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-white dark:bg-gray-600 rounded-lg text-lg font-bold"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center text-sm font-medium text-gray-900 dark:text-white">{imageCount}</span>
-                  <button 
-                    onClick={() => setImageCount(Math.min(4, imageCount + 1))}
-                    className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-white dark:bg-gray-600 rounded-lg text-lg font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 输入区域 */}
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="描述你想要创作的内容..."
-                className="w-full h-24 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm resize-none focus:outline-none focus:border-gray-300 dark:focus:border-gray-500 transition-colors text-gray-900 dark:text-white placeholder-gray-400"
-              />
-              <button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isCreating}
-                className="absolute bottom-4 right-4 w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {/* 底部功能栏 */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-3">
-                {/* 电商AI灵感 */}
-                <button 
-                  onClick={() => setShowInspiration(true)}
-                  className="px-4 py-2 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-pink-100 dark:hover:bg-pink-900/50 transition-colors"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  电商专用
-                </button>
-              </div>
-              
-              {/* 积分计算 */}
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <Coins className="w-5 h-5 text-pink-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  本次消耗 <span className="font-semibold text-gray-900 dark:text-white">{cost}</span> 积分
-                </span>
-                <span className="text-xs text-gray-400">|</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">剩余 {credits} 积分</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* 积分详情弹窗 */}
-      {showCredits && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowCredits(false)}>
-          <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl w-96 shadow-xl flex flex-col max-h-[80vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 第一行：标题 + 余额 + 关闭按钮 */}
-            <div className="flex items-center justify-between px-5 py-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">积分余额</h3>
-              <div className="flex items-center gap-4">
-                <span className="text-lg font-bold text-gray-900 dark:text-white">{credits} <span className="text-sm font-normal text-gray-500">可用积分</span></span>
-                <button 
-                  onClick={() => setShowCredits(false)}
-                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Tab 切换 */}
-            <div className="flex border-b border-gray-100 dark:border-gray-700 px-5">
-              {(['all', 'recharge', 'consume', 'gift'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setCreditTab(tab)}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                    creditTab === tab
-                      ? 'text-pink-500 border-b-2 border-pink-500'
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-                  }`}
-                >
-                  {tab === 'all' ? '全部' : tab === 'recharge' ? '充值' : tab === 'consume' ? '消耗' : '赠送'}
-                </button>
-              ))}
-            </div>
-
-            {/* 明细列表（可滚动） */}
-            <div className="flex-1 overflow-y-auto max-h-64 px-5 py-3">
-              {creditLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                </div>
-              ) : creditHistory.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  暂无记录
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {creditHistory.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                          item.amount > 0 
-                            ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
-                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                        }`}>
-                          {item.amount > 0 ? '+' : ''}{item.amount}
-                        </div>
-                        <div>
-                          <div className="text-sm text-gray-700 dark:text-gray-200">{item.description}</div>
-                          <div className="text-xs text-gray-400">
-                            {new Date(item.created_at).toLocaleDateString('zh-CN')}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        {item.balance_after}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 参考图上传 - 使用全局隐藏input */}
-      <input
-        type="file"
-        id="main-reference-upload"
-        accept="image/*"
-        className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            setReferenceImage(URL.createObjectURL(file));
-          }
-        }}
+    <div className="min-h-screen bg-gray-50">
+      <WorkbenchHeader
+        credits={user?.credits ?? 0}
+        displayName={getUserDisplayName(user, undefined)}
+        onCreditsClick={() => router.push(user ? '/profile?tab=credits' : '/auth')}
+        onProfileClick={() => router.push(user ? '/profile' : '/auth')}
       />
 
-      {/* 电商专用弹窗 */}
-      {showInspiration && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowInspiration(false)}>
-          <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-[420px] shadow-xl max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-pink-500" />
-                电商专用
-              </h3>
-              <button 
-                onClick={() => setShowInspiration(false)}
-                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+      <main className="mx-auto grid max-w-6xl gap-6 px-6 py-8 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <section className="space-y-6">
+          {successMessage ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              <CheckCircle className="mt-0.5 h-5 w-5 flex-none" />
+              <span>{successMessage}</span>
+            </div>
+          ) : null}
+
+          {error ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-5 w-5 flex-none" />
+              <span>{error}</span>
+            </div>
+          ) : null}
+
+          {insufficientCredits ? (
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="mt-0.5 h-5 w-5 flex-none" />
+                <span>当前积分不足，请先前往个人中心激活卡密或补充积分。</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push(user ? '/profile?tab=credits' : '/auth')}
+                className="rounded-xl bg-orange-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-orange-600"
               >
-                <X className="w-5 h-5" />
+                去处理
               </button>
             </div>
-            
-            {/* 功能标签 */}
-            <div className="flex gap-2 mb-5 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl">
+          ) : null}
+
+          <PresetSelector
+            presets={IMAGE_PRESETS}
+            selectedPreset={selectedPreset}
+            onSelect={setSelectedPreset}
+          />
+
+          <PromptPanel
+            value={prompt}
+            onChange={setPrompt}
+            placeholder={presetPlaceholder}
+            description={selectedPresetDefinition.description}
+          />
+
+          <GenerationControls
+            resolution={resolution}
+            onResolutionChange={setResolution}
+            ratio={ratio}
+            onRatioChange={setRatio}
+            creditsCost={creditsCost}
+          />
+
+          <ReferenceImageUpload
+            value={referenceImage}
+            onChange={setReferenceImage}
+            hidden={!supportsReferenceImage}
+          />
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
               <button
-                onClick={() => setEcomTab('whitebg')}
-                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  ecomTab === 'whitebg' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
+                type="button"
+                onClick={resetGeneration}
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
               >
-                高清白底图
+                <RotateCcw className="h-4 w-4" />
+                重置
               </button>
               <button
-                onClick={() => setEcomTab('fashion')}
-                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                  ecomTab === 'fashion' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
+                type="button"
+                onClick={() => generateImage()}
+                disabled={!prompt.trim() || isGenerating || !selectedPresetDefinition.enabled}
+                className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Shirt className="w-4 h-4" />
-                服饰赛道
+                <Send className="h-4 w-4" />
+                {isGenerating ? '生成中…' : selectedPresetDefinition.enabled ? '立即生成' : '暂未开放'}
               </button>
-              <button
-                onClick={() => setEcomTab('ecommerce')}
-                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  ecomTab === 'ecommerce' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                电商图
-              </button>
-            </div>
-
-            {/* 高清白底图 */}
-            {ecomTab === 'whitebg' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                    <Camera className="w-4 h-4" />
-                    上传商品图片
-                  </label>
-                  <div className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                    whitebgImage 
-                      ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`} onClick={() => document.getElementById('whitebg-input')?.click()}>
-                    {whitebgImage ? (
-                      <div className="relative w-full h-40">
-                        <Image src={whitebgImage} alt="预览" fill className="object-contain" />
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500 dark:text-gray-400">点击或拖拽上传图片</p>
-                      </>
-                    )}
-                    <input
-                      id="whitebg-input"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, setWhitebgImage)}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-                <button
-                  disabled={!whitebgImage}
-                  className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  生成白底图
-                </button>
-              </div>
-            )}
-
-            {/* 服饰赛道 */}
-            {ecomTab === 'fashion' && (
-              <div className="space-y-4">
-                {/* 模式切换 */}
-                <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl">
-                  <button
-                    onClick={() => setFashionMode('product')}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      fashionMode === 'product' 
-                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}
-                  >
-                    换成自己的产品
-                  </button>
-                  <button
-                    onClick={() => setFashionMode('model')}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      fashionMode === 'model' 
-                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}
-                  >
-                    换模特
-                  </button>
-                </div>
-
-                {/* 换成自己的产品 */}
-                {fashionMode === 'product' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        上传产品图（高清）
-                      </label>
-                      <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        fashionProductImage 
-                          ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
-                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`} onClick={() => document.getElementById('fashion-product-input')?.click()}>
-                        {fashionProductImage ? (
-                          <div className="relative w-full h-28">
-                            <Image src={fashionProductImage} alt="产品图" fill className="object-contain" />
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                            <p className="text-xs text-gray-500">点击上传</p>
-                          </>
-                        )}
-                        <input
-                          id="fashion-product-input"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, setFashionProductImage)}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        上传参考图
-                      </label>
-                      <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        fashionProductRef 
-                          ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
-                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`} onClick={() => document.getElementById('fashion-product-ref-upload')?.click()}>
-                        {fashionProductRef ? (
-                          <div className="relative w-full h-28">
-                            <Image src={fashionProductRef} alt="参考图" fill className="object-contain" />
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                            <p className="text-xs text-gray-500">点击上传</p>
-                          </>
-                        )}
-                        <input
-                          id="fashion-product-ref-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, setFashionProductRef)}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 换模特 */}
-                {fashionMode === 'model' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        上传模特图（高清）
-                      </label>
-                      <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        fashionModelImage 
-                          ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
-                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`} onClick={() => document.getElementById('fashion-model-upload')?.click()}>
-                        {fashionModelImage ? (
-                          <div className="relative w-full h-28">
-                            <Image src={fashionModelImage} alt="模特图" fill className="object-contain" />
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                            <p className="text-xs text-gray-500">点击上传</p>
-                          </>
-                        )}
-                        <input
-                          id="fashion-model-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, setFashionModelImage)}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        上传参考图
-                      </label>
-                      <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        fashionModelRef 
-                          ? 'border-pink-300 bg-pink-50 dark:bg-pink-900/20' 
-                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                      }`} onClick={() => document.getElementById('fashion-model-ref-upload')?.click()}>
-                        {fashionModelRef ? (
-                          <div className="relative w-full h-28">
-                            <Image src={fashionModelRef} alt="参考图" fill className="object-contain" />
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                            <p className="text-xs text-gray-500">点击上传</p>
-                          </>
-                        )}
-                        <input
-                          id="fashion-model-ref-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, setFashionModelRef)}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  disabled={fashionMode === 'product' ? !fashionProductImage || !fashionProductRef : !fashionModelImage || !fashionModelRef}
-                  className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  生成
-                </button>
-              </div>
-            )}
-
-            {/* 电商图 */}
-            {ecomTab === 'ecommerce' && (
-              <div className="space-y-4">
-                {/* 语言选择 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                    <Globe className="w-4 h-4" />
-                    语言
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.id}
-                        onClick={() => setEcomLanguage(lang)}
-                        className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                          ecomLanguage.id === lang.id
-                            ? 'bg-pink-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 平台选择 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    平台
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {PLATFORMS.map((platform) => (
-                      <button
-                        key={platform.id}
-                        onClick={() => setEcomPlatform(platform)}
-                        className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                          ecomPlatform.id === platform.id
-                            ? 'bg-pink-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        {platform.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 图片功能选择 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4" />
-                    图片功能
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {IMAGE_TYPES.map((type) => (
-                      <label
-                        key={type.id}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                          ecomImageTypes.includes(type.id)
-                            ? 'bg-pink-50 dark:bg-pink-900/30'
-                            : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={ecomImageTypes.includes(type.id)}
-                          onChange={() => toggleImageType(type.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500"
-                        />
-                        <span className={`text-sm ${
-                          ecomImageTypes.includes(type.id)
-                            ? 'text-pink-600 dark:text-pink-400'
-                            : 'text-gray-700 dark:text-gray-300'
-                        }`}>
-                          {type.name}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleInspiration}
-                  disabled={ecomImageTypes.length === 0}
-                  className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  生成灵感
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 联系客服弹窗 */}
-      {showCustomerService && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowCustomerService(false)}>
-          <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl w-[420px] shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 标题栏 */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-blue-500" />
-                联系客服
-              </h3>
-              <button 
-                onClick={() => setShowCustomerService(false)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* 客服联系方式 */}
-            <div className="p-5 space-y-4">
-              {/* 微信 */}
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                  <span className="text-xl">💬</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">微信</p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">待填写</p>
-                </div>
-              </div>
-              
-              {/* 邮箱 */}
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                  <span className="text-xl">📧</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">邮箱</p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">待填写</p>
-                </div>
-              </div>
-              
-              {/* QQ */}
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                  <span className="text-xl">💭</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">QQ</p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">待填写</p>
-                </div>
-              </div>
-              
-              {/* 工作时间 */}
-              <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <span>🕐</span>
-                  工作时间：周一至周五 9:00-18:00
-                </p>
-              </div>
             </div>
           </div>
-        </div>
-      )}
+        </section>
+
+        <section>
+          <ResultGallery
+            images={generatedImages}
+            isGenerating={isGenerating}
+            resolution={resolution}
+            ratio={ratio}
+            onDownload={handleDownload}
+          />
+        </section>
+      </main>
     </div>
   );
 }

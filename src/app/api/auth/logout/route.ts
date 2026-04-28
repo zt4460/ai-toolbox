@@ -1,21 +1,11 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { clearSessionCookie } from '@/lib/auth/session';
+import { jsonFromError, jsonSuccess } from '@/lib/http/response';
 
-// 登出
 export async function POST() {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete('session_token');
-
-    return NextResponse.json({
-      success: true,
-      message: '已退出登录',
-    });
+    await clearSessionCookie();
+    return jsonSuccess({ message: '已退出登录' });
   } catch (error) {
-    console.error('登出错误:', error);
-    return NextResponse.json(
-      { error: '登出失败' },
-      { status: 500 }
-    );
+    return jsonFromError(error);
   }
 }

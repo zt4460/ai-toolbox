@@ -36,6 +36,7 @@ export default function AuthPage() {
   // 通用状态
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [devCode, setDevCode] = useState('');
 
   // 验证码倒计时
   useEffect(() => {
@@ -51,14 +52,6 @@ export default function AuthPage() {
     if (/^1[3-9]\d{9}$/.test(value)) return 'phone';
     if (value.length >= 3) return 'username';
     return null;
-  };
-
-  const getPlaceholder = (type: 'login' | 'register') => {
-    const value = type === 'login' ? loginIdentifier : regIdentifier;
-    const accountType = getAccountType(value);
-    if (accountType === 'email') return 'your@email.com';
-    if (accountType === 'phone') return '13800138000';
-    return '用户名 / 邮箱 / 手机号';
   };
 
   // 发送验证码
@@ -93,7 +86,8 @@ export default function AuthPage() {
 
       setCodeSent(true);
       setCountdown(60);
-    } catch (err) {
+      setDevCode(data.devCode || '');
+    } catch {
       setError('发送验证码失败，请稍后重试');
     } finally {
       setSendCodeLoading(false);
@@ -145,6 +139,7 @@ export default function AuthPage() {
     setActiveTab(value as 'login' | 'register');
     setError('');
     setCodeSent(false);
+    setDevCode('');
   };
 
   return (
@@ -301,6 +296,12 @@ export default function AuthPage() {
                       </Button>
                     </div>
                   </div>
+
+                  {devCode ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                      当前为本地开发模式，验证码：<span className="font-semibold tracking-widest">{devCode}</span>
+                    </div>
+                  ) : null}
 
                   {/* 激活码 */}
                   <div>

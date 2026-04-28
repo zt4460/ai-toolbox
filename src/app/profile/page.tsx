@@ -1,65 +1,82 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  UserIcon, 
-  LogOutIcon, 
-  CoinsIcon,
-  TicketIcon,
-  HistoryIcon,
-  Loader2
-} from 'lucide-react';
+import { ArrowLeft, Loader2, LogOutIcon, RefreshCw } from 'lucide-react';
 import { useAuth } from '../providers';
+import { ProfileSummary } from '@/features/profile/components/profile-summary';
+import { CreditsPanel } from '@/features/credits/components/credits-panel';
+import { getUserDisplayName } from '@/features/auth/display-name';
+import { checkDesktopUpdate } from '@/lib/desktop/updater';
+
+interface CreditTransaction {
+  id: string;
+  type: string;
+  amount: number;
+  description: string;
+  created_at: string;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const { user, loading, logout, refreshUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<'profile' | 'credits'>('profile');
   const [credits, setCredits] = useState(0);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [activationCode, setActivationCode] = useState('');
   const [activating, setActivating] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<{ type: 'success' | 'error' | ''; text: string }>({ type: '', text: '' });
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth');
     }
-  }, [user, loading, router]);
+  }, [loading, router, user]);
 
   useEffect(() => {
-    if (user) {
-      fetchCredits();
-      fetchTransactions();
+    if (!user) {
+      return;
     }
+
+    const loadCreditData = async () => {
+      try {
+        const [creditRes, historyRes] = await Promise.all([
+          fetch('/api/credits/balance'),
+          fetch('/api/credits/history'),
+        ]);
+        const creditData = await creditRes.json();
+        const historyData = await historyRes.json();
+
+        if (creditData.success) {
+          setCredits(creditData.credits || 0);
+        }
+        if (historyData.success) {
+          setTransactions(historyData.transactions || []);
+        }
+      } catch {
+        setTransactions([]);
+      }
+    };
+
+    loadCreditData();
   }, [user]);
 
-  const fetchCredits = async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (data.user) {
-        setCredits(data.user.credits || 0);
-      }
-    } catch (error) {
-      console.error('获取积分失败:', error);
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
     }
-  };
 
-  const fetchTransactions = async () => {
-    try {
-      const res = await fetch('/api/credits/history');
-      const data = await res.json();
-      if (data.transactions) {
-        setTransactions(data.transactions);
-      }
-    } catch (error) {
-      console.error('获取交易记录失败:', error);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'credits') {
+      setActiveTab('credits');
+      return;
     }
-  };
+
+    setActiveTab('profile');
+  }, []);
 
   const handleActivate = async () => {
     if (!activationCode.trim()) {
@@ -71,29 +88,55 @@ export default function ProfilePage() {
     setMessage({ type: '', text: '' });
 
     try {
-      const res = await fetch('/api/credits/activate', {
+      const response = await fetch('/api/credits/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: activationCode }),
       });
+      const data = await response.json();
 
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error(data.error || '激活失败');
       }
 
-      setMessage({ type: 'success', text: '激活成功！' });
+      setCredits(data.credits || credits);
       setActivationCode('');
-      fetchCredits();
-      fetchTransactions();
-    } catch (err) {
-      setMessage({ 
-        type: 'error', 
-        text: err instanceof Error ? err.message : '激活失败' 
-      });
+      setMessage({ type: 'success', text: data.message || '激活成功' });
+      await refreshUser();
+
+      const historyRes = await fetch('/api/credits/history');
+      const historyData = await historyRes.json();
+      if (historyData.success) {
+        setTransactions(historyData.transactions || []);
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : '激活失败' });
     } finally {
       setActivating(false);
+    }
+  };
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    setUpdateMessage({ type: '', text: '' });
+
+    try {
+      const result = await checkDesktopUpdate();
+      if (result.status === 'unsupported') {
+        setUpdateMessage({ type: 'error', text: '当前是网页环境，请在桌面版中检查更新' });
+        return;
+      }
+
+      if (result.status === 'none') {
+        setUpdateMessage({ type: 'success', text: '当前已经是最新版本' });
+        return;
+      }
+
+      setUpdateMessage({ type: 'success', text: `更新已安装（${result.version || '新版本'}），请重启应用` });
+    } catch (error) {
+      setUpdateMessage({ type: 'error', text: error instanceof Error ? error.message : '检查更新失败，请稍后重试' });
+    } finally {
+      setCheckingUpdate(false);
     }
   };
 
@@ -102,183 +145,104 @@ export default function ProfilePage() {
     router.push('/');
   };
 
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case 'recharge':
-      case 'activation':
-        return <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-          <CoinsIcon className="w-4 h-4 text-green-600" />
-        </div>;
-      case 'consume':
-        return <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-          <CoinsIcon className="w-4 h-4 text-red-600" />
-        </div>;
-      case 'refund':
-        return <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-          <CoinsIcon className="w-4 h-4 text-blue-600" />
-        </div>;
-      default:
-        return <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-          <CoinsIcon className="w-4 h-4 text-gray-600" />
-        </div>;
-    }
-  };
-
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="h-14 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
-        <Link href="/" className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <span className="font-semibold text-gray-900">个人中心</span>
-      </header>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="flex gap-8">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'profile'
-                  ? 'border-gray-900 text-gray-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              个人信息
-            </button>
-            <button
-              onClick={() => setActiveTab('credits')}
-              className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'credits'
-                  ? 'border-gray-900 text-gray-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              积分管理
-            </button>
+      <header className="border-b border-gray-200 bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-gray-900">
+              <ArrowLeft className="h-4 w-4" />
+              返回工作台
+            </Link>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">个人中心</h1>
+              <p className="text-sm text-gray-500">管理账户、积分和卡密。</p>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        {activeTab === 'profile' && (
-          <div className="space-y-6">
-            {/* Avatar & Name */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                  <UserIcon className="w-8 h-8 text-gray-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{user.nickname || user.email}</h2>
-                  <p className="text-gray-500 text-sm">{user.email}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Account Info */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">账户信息</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-600">邮箱</span>
-                  <span className="text-gray-900">{user.email}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-600">积分余额</span>
-                  <span className="text-gray-900 font-medium">{credits} 积分</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-600">注册时间</span>
-                  <span className="text-gray-900">{new Date(user.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Logout */}
+          <div className="inline-flex items-center gap-2">
             <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              type="button"
+              onClick={handleCheckUpdate}
+              disabled={checkingUpdate}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <LogOutIcon className="w-5 h-5" />
+              <RefreshCw className={`h-4 w-4 ${checkingUpdate ? 'animate-spin' : ''}`} />
+              {checkingUpdate ? '检查中...' : '检查更新'}
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+            >
+              <LogOutIcon className="h-4 w-4" />
               退出登录
             </button>
           </div>
-        )}
+        </div>
+      </header>
 
-        {activeTab === 'credits' && (
-          <div className="space-y-6">
-            {/* Balance Card */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-gray-600">当前积分</span>
-                <div className="flex items-center gap-2">
-                  <CoinsIcon className="w-5 h-5 text-amber-500" />
-                  <span className="text-2xl font-bold text-gray-900">{credits}</span>
-                </div>
-              </div>
+      <main className="mx-auto max-w-5xl px-6 py-8">
+          {updateMessage.text ? (
+            <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${updateMessage.type === 'error' ? 'border-red-200 bg-red-50 text-red-600' : 'border-green-200 bg-green-50 text-green-700'}`}>
+              {updateMessage.text}
             </div>
-
-            {/* Activation */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">卡密激活</h3>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="请输入卡密"
-                  value={activationCode}
-                  onChange={(e) => setActivationCode(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 outline-none focus:border-gray-400 transition-colors"
-                />
-                <button
-                  onClick={handleActivate}
-                  disabled={activating}
-                  className="px-6 py-2.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
-                >
-                  {activating ? <Loader2 className="w-5 h-5 animate-spin" /> : '激活'}
-                </button>
-              </div>
-              {message.text && (
-                <p className={`mt-3 text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
-                  {message.text}
-                </p>
-              )}
+          ) : null}
+          <div className="mb-6 flex items-center justify-between gap-3 border-b border-gray-200 pb-3">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab('profile')}
+                className={`border-b-2 px-1 py-3 text-sm font-medium transition ${
+                  activeTab === 'profile' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                账户信息
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('credits')}
+                className={`border-b-2 px-1 py-3 text-sm font-medium transition ${
+                  activeTab === 'credits' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                积分管理
+              </button>
             </div>
-
-            {/* Transaction History */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">积分明细</h3>
-              {transactions.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">暂无积分记录</p>
-              ) : (
-                <div className="space-y-3">
-                  {transactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
-                      {getTransactionIcon(tx.type)}
-                      <div className="flex-1">
-                        <p className="text-gray-900 text-sm">{tx.description}</p>
-                        <p className="text-gray-400 text-xs">{new Date(tx.created_at).toLocaleString()}</p>
-                      </div>
-                      <span className={`font-medium ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.amount > 0 ? '+' : ''}{tx.amount}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {user.is_admin ? (
+              <Link
+                href="/admin/activation-codes"
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+              >
+                卡密后台
+              </Link>
+            ) : null}
           </div>
+
+        {activeTab === 'profile' ? (
+          <ProfileSummary
+            displayName={getUserDisplayName(user, '未命名用户')}
+            email={user.email}
+            phone={user.phone}
+            createdAt={user.created_at}
+          />
+        ) : (
+          <CreditsPanel
+            credits={credits}
+            transactions={transactions}
+            activationCode={activationCode}
+            onActivationCodeChange={setActivationCode}
+            onActivate={handleActivate}
+            activating={activating}
+            message={message}
+          />
         )}
       </main>
     </div>

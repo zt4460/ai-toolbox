@@ -8,13 +8,12 @@ export const metadata: Metadata = {
     default: 'AI 工具箱',
     template: '%s | AI 工具箱',
   },
-  description: '一站式 AI 创作工具集，支持图片生成、视频生成、数字人创作、视频配音等强大功能',
+  description: '聚焦图片生成、资产管理与积分账户的一体化 AI 创作工作台。',
   keywords: [
     'AI工具箱',
     '图片生成',
-    '视频生成',
-    '数字人',
-    '视频配音',
+    '资产管理',
+    '积分系统',
     'AI创作',
   ],
 };

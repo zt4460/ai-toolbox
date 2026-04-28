@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, varchar, boolean, integer, text, jsonb, index } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, varchar, boolean, integer, text, index, jsonb } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 // 健康检查表
@@ -16,9 +16,8 @@ export const users = pgTable(
 		username: varchar("username", { length: 64 }),
 		phone: varchar("phone", { length: 32 }),
 		password_hash: varchar("password_hash", { length: 255 }).notNull(),
-		nickname: varchar("nickname", { length: 64 }),
-		avatar_url: varchar("avatar_url", { length: 512 }),
 		is_active: boolean("is_active").default(true).notNull(),
+		is_admin: boolean("is_admin").default(false).notNull(),
 		credits: integer("credits").default(0).notNull(),
 		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updated_at: timestamp("updated_at", { withTimezone: true }),
@@ -40,7 +39,7 @@ export const verificationCodes = pgTable(
 		email: varchar("email", { length: 255 }),
 		phone: varchar("phone", { length: 32 }),
 		code: varchar("code", { length: 8 }).notNull(),
-		type: varchar("type", { length: 32 }).notNull(), // 'register', 'reset_password', 'login'
+		type: varchar("type", { length: 32 }).notNull(),
 		expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
 		used: boolean("used").default(false).notNull(),
 		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -57,11 +56,12 @@ export const activationCodes = pgTable(
 	{
 		id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
 		code: varchar("code", { length: 64 }).notNull().unique(),
-		card_type: varchar("card_type", { length: 32 }).notNull(), // 'day_30', 'day_90', 'day_365', 'points_100', 'points_500', 'points_1000'
+		card_type: varchar("card_type", { length: 32 }).notNull(),
 		points: integer("points").default(0).notNull(),
 		days: integer("days").default(0).notNull(),
-		price: integer("price").default(0).notNull(), // 价格（分）
+		price: integer("price").default(0).notNull(),
 		is_used: boolean("is_used").default(false).notNull(),
+		is_disabled: boolean("is_disabled").default(false).notNull(),
 		used_by: varchar("used_by", { length: 36 }).references(() => users.id),
 		used_at: timestamp("used_at", { withTimezone: true }),
 		expires_at: timestamp("expires_at", { withTimezone: true }),
@@ -73,49 +73,32 @@ export const activationCodes = pgTable(
 	]
 );
 
-// 积分充值记录表
-export const creditTransactions = pgTable(
-	"credit_transactions",
+// 生成记录表
+export const generations = pgTable(
+	"generations",
 	{
 		id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
 		user_id: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
-		type: varchar("type", { length: 32 }).notNull(), // 'recharge', 'consume', 'refund', 'activation'
-		amount: integer("amount").notNull(), // 正数增加，负数减少
-		balance_before: integer("balance_before").notNull(),
-		balance_after: integer("balance_after").notNull(),
-		source: varchar("source", { length: 64 }), // 'alipay', 'wechat', 'activation_code', 'refund'
-		related_id: varchar("related_id", { length: 36 }), // 关联的充值记录或卡密ID
-		description: text("description"),
-		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-	},
-	(table) => [
-		index("credit_transactions_user_id_idx").on(table.user_id),
-		index("credit_transactions_created_at_idx").on(table.created_at),
-	]
-);
-
-// 需求投稿表
-export const submissions = pgTable(
-	"submissions",
-	{
-		id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-		user_id: varchar("user_id", { length: 36 }).references(() => users.id),
-		title: varchar("title", { length: 255 }).notNull(),
-		description: text("description").notNull(),
-		category: varchar("category", { length: 64 }), // 'feature', 'bug', 'improvement', 'other'
-		priority: varchar("priority", { length: 32 }).default('normal'), // 'low', 'normal', 'high', 'urgent'
-		status: varchar("status", { length: 32 }).default('pending'), // 'pending', 'reviewed', 'accepted', 'rejected', 'completed'
-		contact: varchar("contact", { length: 128 }), // 联系方式
-		attachments: jsonb("attachments"), // 附件URL列表
-		admin_reply: text("admin_reply"),
-		replied_at: timestamp("replied_at", { withTimezone: true }),
-		completed_at: timestamp("completed_at", { withTimezone: true }),
+		type: varchar("type", { length: 32 }).notNull(),
+		preset: varchar("preset", { length: 64 }),
+		prompt: text("prompt").notNull(),
+		parameters: jsonb("parameters").default(sql`'{}'::jsonb`).notNull(),
+		result_url: varchar("result_url", { length: 2048 }),
+		status: varchar("status", { length: 32 }).default("pending").notNull(),
+		credits_used: integer("credits_used").default(0).notNull(),
+		provider: varchar("provider", { length: 64 }),
+		provider_model: varchar("provider_model", { length: 128 }),
+		provider_task_id: varchar("provider_task_id", { length: 255 }),
+		error_message: text("error_message"),
 		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updated_at: timestamp("updated_at", { withTimezone: true }),
 	},
 	(table) => [
-		index("submissions_user_id_idx").on(table.user_id),
-		index("submissions_status_idx").on(table.status),
-		index("submissions_created_at_idx").on(table.created_at),
+		index("generations_user_id_idx").on(table.user_id),
+		index("generations_created_at_idx").on(table.created_at),
+		index("generations_status_idx").on(table.status),
+		index("generations_type_idx").on(table.type),
+		index("generations_preset_idx").on(table.preset),
+		index("generations_provider_idx").on(table.provider),
 	]
 );

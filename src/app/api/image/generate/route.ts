@@ -1,57 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ImageGenerationClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
+import { NextRequest } from 'next/server';
+import { requireSessionUserId } from '@/lib/auth/session';
+import { generateImagesForUser } from '@/features/image-workbench/server/image-generation-service';
+import { jsonFromError, jsonSuccess } from '@/lib/http/response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, size } = await request.json();
-
-    if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json(
-        { error: '请提供有效的图片描述' },
-        { status: 400 }
-      );
-    }
-
-    // Extract forward headers for request tracing
-    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-
-    // Initialize SDK client
-    const config = new Config();
-    const client = new ImageGenerationClient(config, customHeaders);
-
-    // Generate image
-    const response = await client.generate({
+    const userId = await requireSessionUserId();
+    const { prompt, size, ratio, preset, referenceImage } = await request.json();
+    const result = await generateImagesForUser({
+      userId,
       prompt,
-      size: size || '2K',
-      watermark: true,
+      size,
+      ratio,
+      preset,
+      referenceImage,
+      headers: request.headers,
     });
-
-    const helper = client.getResponseHelper(response);
-
-    if (helper.success) {
-      return NextResponse.json({
-        success: true,
-        imageUrls: helper.imageUrls,
-      });
-    } else {
-      return NextResponse.json(
-        { error: helper.errorMessages.join(', ') || '图片生成失败' },
-        { status: 500 }
-      );
-    }
+    return jsonSuccess(result);
   } catch (error) {
-    console.error('Image generation error:', error);
-    
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: '图片生成服务异常' },
-      { status: 500 }
-    );
+    return jsonFromError(error);
   }
 }

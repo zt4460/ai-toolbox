@@ -99,4 +99,4 @@ Desktop.ini
 
 .coze-logs
 dist-electron
-src-tauri/target
+.tauri-signing/

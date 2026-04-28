@@ -7,10 +7,9 @@ interface User {
   username?: string;
   email?: string;
   phone?: string;
-  nickname?: string;
-  avatar_url?: string;
   credits: number;
   is_active: boolean;
+  is_admin?: boolean;
   created_at: string;
   last_login_at?: string;
 }
@@ -68,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         return { success: false, error: data.error };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: '登录失败' };
     }
   };
@@ -90,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         return { success: false, error: data.error };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: '注册失败' };
     }
   };
